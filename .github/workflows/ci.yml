@@ -1,16 +1,27 @@
+# Copyright 2026 Query Farm LLC - https://query.farm
+#
+# Unit tests (pytest), lint, and the sqllogictest extension suite
+# (test/sql/*.test) run against the vgi-news worker through the real signed
+# `vgi` DuckDB community extension via a prebuilt standalone `haybarn-unittest`.
+# The SQL E2E redirects every provider at a local mock news API — no keys, no
+# cost, no live egress. See ci/README.md for the design.
 name: CI
 
 on:
   push:
     branches: [main]
-    paths-ignore: ['README.md', 'CLAUDE.md']
+    paths-ignore: ['README.md']
   pull_request:
     branches: [main]
-    paths-ignore: ['README.md', 'CLAUDE.md']
+    paths-ignore: ['README.md']
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -21,60 +32,105 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.13"]
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v8.2.0
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      # Install from PyPI (not the local ../vgi-python path used for dev), so CI
-      # is self-contained.
       - name: Install dependencies
-        run: |
-          uv venv
-          uv pip install vgi-python "httpx>=0.27" "pyarrow>=16" pytest ruff mypy
-          uv pip install -e . --no-deps
+        run: uv sync --frozen --all-extras
 
-      - name: Lint (ruff + mypy)
-        run: |
-          uv run --no-sync ruff check .
-          uv run --no-sync mypy vgi_news/ news_worker.py
-
-      # Unit + mock-server + worker-integration tests. Live (network) tests are
-      # excluded by default (pyproject addopts: -m 'not live'), so CI never
-      # touches a real news API.
+      # The `live` marker (real GDELT over the network) is excluded by default
+      # via the pyproject addopts.
       - name: Run tests
         run: uv run --no-sync pytest -q
 
-  e2e-sql:
-    name: SQL end-to-end (haybarn, mocked)
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v8.2.0
+
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras
+
+      - name: Check linting
+        run: uv run --no-sync ruff check .
+
+      - name: Type check (mypy)
+        run: uv run --no-sync mypy vgi_news/ news_worker.py
+
+  # Resolve the latest published haybarn release once, so the whole matrix tests
+  # the same version (and we never hardcode/pin it).
+  resolve-haybarn:
+    name: Resolve haybarn release
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.r.outputs.release }}
+    steps:
+      - id: r
+        run: |
+          REL=$(gh release view --repo Query-farm-haybarn/haybarn --json tagName --jq .tagName)
+          echo "release=$REL" >> "$GITHUB_OUTPUT"
+          echo "Latest haybarn release: $REL"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  integration:
+    name: End-to-end SQL on ${{ matrix.os }}
+    needs: resolve-haybarn
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, asset: haybarn_unittest-linux-amd64.zip }
+          - { os: macos-latest,  asset: haybarn_unittest-osx-arm64.zip }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
 
       - name: Set up Python 3.13
         run: uv python install 3.13
 
-      - name: Install worker dependencies
-        run: |
-          uv venv
-          uv pip install vgi-python "httpx>=0.27" "pyarrow>=16"
-          uv pip install -e . --no-deps
+      - name: Install the worker (from the lockfile)
+        run: uv sync --frozen --python 3.13
 
-      - name: Install haybarn-unittest
+      - name: Download haybarn-unittest
         run: |
-          uv tool install haybarn-unittest
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      # Drives the worker (as a DuckDB subprocess) against a local mock news API.
-      # No network egress to GDELT/NewsAPI, no API keys.
-      - name: Run SQL end-to-end tests
+          gh release download "$HAYBARN_RELEASE" \
+            --repo Query-farm-haybarn/haybarn \
+            --pattern '${{ matrix.asset }}' \
+            --output haybarn-unittest.zip --clobber
+          mkdir -p hb && unzip -o -q haybarn-unittest.zip -d hb
         env:
-          VGI_NEWS_WORKER: .venv/bin/python news_worker.py
-        run: uv run --no-sync python scripts/run_sql_e2e.py
+          GH_TOKEN: ${{ github.token }}
+          HAYBARN_RELEASE: ${{ needs.resolve-haybarn.outputs.release }}
+
+      - name: Resolve runner + worker paths
+        run: |
+          # Absolute paths: run-integration.sh cd's into a staging dir before
+          # invoking the runner, so relative paths would not resolve. The worker
+          # runs from the synced .venv (deps resolved from PyPI via the lockfile);
+          # plain `.venv/bin/python` ignores the PEP 723 header. run-integration.sh
+          # starts the mock news API and redirects both providers at it.
+          UNITTEST="$PWD/$(find hb -name 'haybarn-unittest' -type f | head -1)"
+          chmod +x "$UNITTEST"
+          echo "HAYBARN_UNITTEST=$UNITTEST" >> "$GITHUB_ENV"
+          echo "VGI_NEWS_WORKER=$PWD/.venv/bin/python $PWD/news_worker.py" >> "$GITHUB_ENV"
+
+      - name: Run extension integration suite
+        run: ci/run-integration.sh
