@@ -77,7 +77,7 @@ jobs:
       # in one env is an install-order-dependent collision (the plain package can
       # win and break pydoclint's imports), so give pydoclint its own env.
       - name: Docstring lint (pydoclint)
-        run: uvx --from "pydoclint>=0.5" pydoclint vgi_news/ news_worker.py
+        run: uvx pydoclint --config pyproject.toml vgi_news/ news_worker.py
 
   # Resolve the latest published haybarn release once, so the whole matrix tests
   # the same version (and we never hardcode/pin it).
