@@ -71,8 +71,13 @@ jobs:
       - name: Type check (mypy)
         run: uv run --no-sync mypy vgi_news/ news_worker.py
 
+      # Run pydoclint isolated via uvx: it depends on `docstring-parser-fork`,
+      # which shares the `docstring_parser` import namespace with the plain
+      # `docstring-parser` pulled in transitively by vgi-rpc. Co-installing both
+      # in one env is an install-order-dependent collision (the plain package can
+      # win and break pydoclint's imports), so give pydoclint its own env.
       - name: Docstring lint (pydoclint)
-        run: uv run --no-sync pydoclint vgi_news/ news_worker.py
+        run: uvx --from "pydoclint>=0.5" pydoclint vgi_news/ news_worker.py
 
   # Resolve the latest published haybarn release once, so the whole matrix tests
   # the same version (and we never hardcode/pin it).
