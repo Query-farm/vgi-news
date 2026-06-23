@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "totalResults": 42,
+  "articles": [
+    {
+      "source": { "id": "reuters", "name": "Reuters" },
+      "author": "Jane Doe",
+      "title": "Markets rally after election results",
+      "description": "Stocks rose sharply as results came in.",
+      "url": "https://www.reuters.com/markets/election-rally",
+      "urlToImage": "https://www.reuters.com/img/markets.jpg",
+      "publishedAt": "2024-06-15T12:30:00Z",
+      "content": "Full article text..."
+    },
+    {
+      "source": { "id": null, "name": "The Guardian" },
+      "author": null,
+      "title": "Election turnout hits record high",
+      "description": "Voters showed up in record numbers.",
+      "url": "https://www.theguardian.com/politics/turnout",
+      "urlToImage": null,
+      "publishedAt": "2024-06-15T08:00:00Z",
+      "content": "Full article text..."
+    }
+  ]
+}

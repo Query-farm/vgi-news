@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['README.md', 'CLAUDE.md']
+  pull_request:
+    branches: [main]
+    paths-ignore: ['README.md', 'CLAUDE.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      # Install from PyPI (not the local ../vgi-python path used for dev), so CI
+      # is self-contained.
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install vgi-python "httpx>=0.27" "pyarrow>=16" pytest ruff mypy
+          uv pip install -e . --no-deps
+
+      - name: Lint (ruff + mypy)
+        run: |
+          uv run --no-sync ruff check .
+          uv run --no-sync mypy vgi_news/ news_worker.py
+
+      # Unit + mock-server + worker-integration tests. Live (network) tests are
+      # excluded by default (pyproject addopts: -m 'not live'), so CI never
+      # touches a real news API.
+      - name: Run tests
+        run: uv run --no-sync pytest -q
+
+  e2e-sql:
+    name: SQL end-to-end (haybarn, mocked)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python 3.13
+        run: uv python install 3.13
+
+      - name: Install worker dependencies
+        run: |
+          uv venv
+          uv pip install vgi-python "httpx>=0.27" "pyarrow>=16"
+          uv pip install -e . --no-deps
+
+      - name: Install haybarn-unittest
+        run: |
+          uv tool install haybarn-unittest
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Drives the worker (as a DuckDB subprocess) against a local mock news API.
+      # No network egress to GDELT/NewsAPI, no API keys.
+      - name: Run SQL end-to-end tests
+        env:
+          VGI_NEWS_WORKER: .venv/bin/python news_worker.py
+        run: uv run --no-sync python scripts/run_sql_e2e.py

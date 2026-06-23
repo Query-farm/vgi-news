@@ -1,0 +1,53 @@
+[project]
+name = "vgi-news"
+version = "0.1.0"
+description = "A VGI worker bringing global news search (GDELT, NewsAPI) into DuckDB/SQL"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+authors = [{ name = "Query Farm" }]
+keywords = ["vgi", "duckdb", "news", "gdelt", "newsapi", "search"]
+dependencies = [
+    "vgi-python",
+    "httpx>=0.27",
+    "pyarrow>=16",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+# vgi-python is distributed on PyPI as `vgi-python`. For local development
+# against an in-tree checkout, uncomment the source override below.
+[tool.uv.sources]
+vgi-python = { path = "../vgi-python", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["vgi_news"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Exclude the live (network) smoke tests by default; run them with `-m live`.
+addopts = "-m 'not live'"
+markers = [
+    "live: hits a real news API over the network (GDELT, free); excluded from the CI gate.",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_unused_ignores = true
+ignore_missing_imports = true

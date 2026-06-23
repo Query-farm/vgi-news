@@ -1,0 +1,82 @@
+# name: test/sql/news_search.test
+# description: news_search returns the unified schema with real types (TIMESTAMPTZ, tone DOUBLE)
+# group: [vgi_news]
+#
+# Driven against a local MOCK GDELT server (see scripts/run_sql_e2e.py), so no
+# network and no API keys. Under haybarn-unittest we LOAD vgi explicitly
+# (require vgi would SKIP).
+
+require-env VGI_NEWS_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'news' AS news (TYPE vgi, LOCATION '${VGI_NEWS_WORKER}');
+
+# ---- Unified schema: exactly these 9 columns, in order ----------------------
+
+query I
+SELECT count(*) FROM (DESCRIBE
+  SELECT * FROM news.news_search('anything', count := 2, page_size := 5));
+----
+9
+
+query T
+SELECT column_name FROM (DESCRIBE
+  SELECT * FROM news.news_search('anything', count := 2, page_size := 5));
+----
+title
+url
+domain
+language
+seendate
+country
+tone
+source
+extra
+
+# ---- seendate is a real TIMESTAMP WITH TIME ZONE ----------------------------
+
+query T
+SELECT column_type FROM (DESCRIBE
+  SELECT * FROM news.news_search('anything', count := 2, page_size := 5))
+WHERE column_name = 'seendate';
+----
+TIMESTAMP WITH TIME ZONE
+
+# tone maps to DOUBLE.
+query T
+SELECT column_type FROM (DESCRIBE
+  SELECT * FROM news.news_search('anything', count := 2, page_size := 5))
+WHERE column_name = 'tone';
+----
+DOUBLE
+
+# ---- Row contents from the mock: titles, source, a parsed timestamp ---------
+
+query TT
+SELECT title, source
+FROM news.news_search('anything', count := 2, page_size := 5)
+ORDER BY seendate DESC;
+----
+Newest A	gdelt
+Newest B	gdelt
+
+# seendate parsed to the expected instant; tone is NULL for GDELT ArtList.
+query I
+SELECT seendate = TIMESTAMPTZ '2024-06-15 12:00:00+00'
+FROM news.news_search('anything', count := 2, page_size := 5)
+ORDER BY seendate DESC
+LIMIT 1;
+----
+true
+
+query I
+SELECT count(*) FROM news.news_search('anything', count := 2, page_size := 5)
+WHERE tone IS NULL;
+----
+2
+
+statement ok
+DETACH news;

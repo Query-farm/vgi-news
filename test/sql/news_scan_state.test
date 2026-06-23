@@ -1,0 +1,53 @@
+# name: test/sql/news_scan_state.test
+# description: the GDELT window scan-state ROUND-TRIPS across a batch boundary
+# group: [vgi_news]
+#
+# The mock GDELT server (scripts/run_sql_e2e.py) returns two newest articles on
+# the first request and one OLDER article on any request carrying enddatetime
+# (the window cursor). With page_size := 2 the first page is "full", so the
+# worker must serialize the window cursor (oldest seendate) and resume from it
+# to fetch the older window. Getting all 3 rows — including "Older C", reachable
+# ONLY via the resumed cursor — proves the round-trip.
+
+require-env VGI_NEWS_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'news' AS news (TYPE vgi, LOCATION '${VGI_NEWS_WORKER}');
+
+# count := 3 spans two windows; page_size := 2 forces the cross-batch hop.
+query I
+SELECT count(*) FROM news.news_search('anything', count := 3, page_size := 2);
+----
+3
+
+# All three titles, newest -> oldest. "Older C" comes from the SECOND window.
+query T
+SELECT title
+FROM news.news_search('anything', count := 3, page_size := 2)
+ORDER BY seendate DESC;
+----
+Newest A
+Newest B
+Older C
+
+# The oldest row (from the resumed window) carries its own country, confirming
+# it is genuinely the second-window article and not a duplicate of page one.
+query T
+SELECT country
+FROM news.news_search('anything', count := 3, page_size := 2)
+ORDER BY seendate ASC
+LIMIT 1;
+----
+France
+
+# count caps total rows even though more windows could be fetched.
+query I
+SELECT count(*) FROM news.news_search('anything', count := 2, page_size := 2);
+----
+2
+
+statement ok
+DETACH news;

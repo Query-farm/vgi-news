@@ -1,0 +1,39 @@
+# name: test/sql/news_errors.test
+# description: provider discovery + clean error paths (unknown provider, missing key)
+# group: [vgi_news]
+
+require-env VGI_NEWS_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'news' AS news (TYPE vgi, LOCATION '${VGI_NEWS_WORKER}');
+
+# ---- news_providers() lists providers + key requirement ---------------------
+
+query TI
+SELECT provider, requires_key FROM news.news_providers() ORDER BY provider;
+----
+gdelt	false
+newsapi	true
+
+# ---- unknown provider -> clean error (worker does not crash) ----------------
+
+statement error
+SELECT * FROM news.news_search('x', provider := 'doesnotexist');
+----
+unknown provider
+
+# ---- newsapi without a configured secret -> clean error ---------------------
+# (No TYPE newsapi secret is created in this suite; the mock would also 401,
+# but the worker rejects the missing key before/at the request with a clean
+# message rather than crashing.)
+
+statement error
+SELECT * FROM news.news_search('x', provider := 'newsapi');
+----
+API key
+
+statement ok
+DETACH news;

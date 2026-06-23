@@ -1,0 +1,34 @@
+{
+  "articles": [
+    {
+      "url": "https://www.bbc.co.uk/news/world-climate-summit-2024",
+      "url_mobile": "",
+      "title": "World leaders gather for climate summit",
+      "seendate": "20240615T123000Z",
+      "socialimage": "https://www.bbc.co.uk/img/summit.jpg",
+      "domain": "bbc.co.uk",
+      "language": "English",
+      "sourcecountry": "United Kingdom"
+    },
+    {
+      "url": "https://www.lemonde.fr/planete/sommet-climat",
+      "url_mobile": "",
+      "title": "Sommet sur le climat: les enjeux",
+      "seendate": "20240615T090000Z",
+      "socialimage": "https://www.lemonde.fr/img/climat.jpg",
+      "domain": "lemonde.fr",
+      "language": "French",
+      "sourcecountry": "France"
+    },
+    {
+      "url": "https://example.org/no-date-article",
+      "url_mobile": "",
+      "title": "Article missing a seendate",
+      "seendate": "",
+      "socialimage": "",
+      "domain": "example.org",
+      "language": "English",
+      "sourcecountry": "United States"
+    }
+  ]
+}
