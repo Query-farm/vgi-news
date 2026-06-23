@@ -182,7 +182,7 @@ scripts/run_sql_e2e.py      # starts the mock API + runs the haybarn SQL suite
 
 ## Authorship & License
 
-Written by [Query.Farm](https://query.farm) — every VGI worker is designed and built by Query.Farm.
+Written by [Query.Farm](https://query.farm).
 
 Copyright 2026 Query Farm LLC - https://query.farm
 
