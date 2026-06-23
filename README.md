@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="docs/vgi-logo.png" alt="Vector Gateway Interface (VGI)" width="320">
+</p>
+
+<p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
+
 # vgi-news
 
 Search global news coverage from SQL. A [VGI](https://github.com/Query-farm/vgi-python)
@@ -171,3 +177,12 @@ scripts/run_sql_e2e.py      # starts the mock API + runs the haybarn SQL suite
   secret manager).
 - Python deps (`httpx`, `pyarrow`, `vgi-python`) are permissively licensed; no
   provider SDKs are bundled — providers are plain HTTP.
+
+---
+
+## Authorship & License
+
+Written by [Query.Farm](https://query.farm) — every VGI worker is designed and built by Query.Farm.
+
+Copyright 2026 Query Farm LLC - https://query.farm
+
