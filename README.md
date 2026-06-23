@@ -4,7 +4,9 @@
 
 <p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
 
-# vgi-news
+# Global News Search via GDELT & NewsAPI in DuckDB
+
+> **vgi-news** · a [Query.Farm](https://query.farm) VGI worker
 
 Search global news coverage from SQL. A [VGI](https://github.com/Query-farm/vgi-python)
 worker that exposes a `news_search(...)` table function over a **pluggable
