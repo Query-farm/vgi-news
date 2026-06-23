@@ -62,16 +62,34 @@ def gdelt_paging_server():
     pages = [
         {
             "articles": [
-                {"url": "https://a.test/1", "title": "Newest A", "seendate": "20240615T120000Z",
-                 "domain": "a.test", "language": "English", "sourcecountry": "United States"},
-                {"url": "https://a.test/2", "title": "Newest B", "seendate": "20240615T100000Z",
-                 "domain": "a.test", "language": "English", "sourcecountry": "United States"},
+                {
+                    "url": "https://a.test/1",
+                    "title": "Newest A",
+                    "seendate": "20240615T120000Z",
+                    "domain": "a.test",
+                    "language": "English",
+                    "sourcecountry": "United States",
+                },
+                {
+                    "url": "https://a.test/2",
+                    "title": "Newest B",
+                    "seendate": "20240615T100000Z",
+                    "domain": "a.test",
+                    "language": "English",
+                    "sourcecountry": "United States",
+                },
             ]
         },
         {
             "articles": [
-                {"url": "https://a.test/3", "title": "Older C", "seendate": "20240614T080000Z",
-                 "domain": "a.test", "language": "English", "sourcecountry": "France"},
+                {
+                    "url": "https://a.test/3",
+                    "title": "Older C",
+                    "seendate": "20240614T080000Z",
+                    "domain": "a.test",
+                    "language": "English",
+                    "sourcecountry": "France",
+                },
             ]
         },
     ]
@@ -91,9 +109,7 @@ def test_news_providers_lists_providers():
     with _client() as client:
         table = _collect(client.table_function(function_name="news_providers"))
     assert table.column_names == ["provider", "requires_key"]
-    providers = dict(
-        zip(table.column("provider").to_pylist(), table.column("requires_key").to_pylist(), strict=True)
-    )
+    providers = dict(zip(table.column("provider").to_pylist(), table.column("requires_key").to_pylist(), strict=True))
     assert providers == {"gdelt": False, "newsapi": True}
 
 
@@ -107,7 +123,15 @@ def test_news_search_unified_schema_and_types(mock_gdelt, worker_env):
             )
         )
     assert table.column_names == [
-        "title", "url", "domain", "language", "seendate", "country", "tone", "source", "extra",
+        "title",
+        "url",
+        "domain",
+        "language",
+        "seendate",
+        "country",
+        "tone",
+        "source",
+        "extra",
     ]
     # seendate is a real TIMESTAMPTZ.
     seendate_type = table.schema.field("seendate").type
@@ -149,30 +173,28 @@ def test_scan_state_round_trips_across_batch_boundary(gdelt_paging_server, worke
 def test_newsapi_path_via_mock_requires_secret(mock_newsapi, worker_env):
     """Without a secret configured, the newsapi provider errors cleanly (no crash)."""
     worker_env({"VGI_NEWS_NEWSAPI_BASE_URL": mock_newsapi})
-    with _client() as client:
-        with pytest.raises(Exception) as excinfo:
-            _collect(
-                client.table_function(
-                    function_name="news_search",
-                    arguments=Arguments(
-                        positional=[pa.scalar("elections")],
-                        named={"provider": pa.scalar("newsapi")},
-                    ),
-                )
+    with _client() as client, pytest.raises(Exception) as excinfo:
+        _collect(
+            client.table_function(
+                function_name="news_search",
+                arguments=Arguments(
+                    positional=[pa.scalar("elections")],
+                    named={"provider": pa.scalar("newsapi")},
+                ),
             )
+        )
     assert "API key" in str(excinfo.value) or "secret" in str(excinfo.value).lower()
 
 
 def test_unknown_provider_errors_clean():
-    with _client() as client:
-        with pytest.raises(Exception) as excinfo:
-            _collect(
-                client.table_function(
-                    function_name="news_search",
-                    arguments=Arguments(
-                        positional=[pa.scalar("x")],
-                        named={"provider": pa.scalar("nope")},
-                    ),
-                )
+    with _client() as client, pytest.raises(Exception) as excinfo:
+        _collect(
+            client.table_function(
+                function_name="news_search",
+                arguments=Arguments(
+                    positional=[pa.scalar("x")],
+                    named={"provider": pa.scalar("nope")},
+                ),
             )
+        )
     assert "unknown provider" in str(excinfo.value).lower()

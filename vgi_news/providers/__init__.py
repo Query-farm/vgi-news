@@ -39,6 +39,9 @@ def get_provider(name: str, *, base_url: str | None = None, timeout: float = 20.
             at a mock HTTP server). ``None`` uses the provider default.
         timeout: Per-request timeout in seconds.
 
+    Returns:
+        A new provider instance for ``name``.
+
     Raises:
         ProviderError: If ``name`` is not a known provider.
     """

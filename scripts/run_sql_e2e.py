@@ -38,16 +38,35 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # assert the window scan-state round-trips across a batch boundary.
 _GDELT_PAGE_1 = {
     "articles": [
-        {"url": "https://a.test/1", "title": "Newest A", "seendate": "20240615T120000Z",
-         "domain": "a.test", "language": "English", "sourcecountry": "United States", "socialimage": "x"},
-        {"url": "https://a.test/2", "title": "Newest B", "seendate": "20240615T100000Z",
-         "domain": "a.test", "language": "English", "sourcecountry": "United States"},
+        {
+            "url": "https://a.test/1",
+            "title": "Newest A",
+            "seendate": "20240615T120000Z",
+            "domain": "a.test",
+            "language": "English",
+            "sourcecountry": "United States",
+            "socialimage": "x",
+        },
+        {
+            "url": "https://a.test/2",
+            "title": "Newest B",
+            "seendate": "20240615T100000Z",
+            "domain": "a.test",
+            "language": "English",
+            "sourcecountry": "United States",
+        },
     ]
 }
 _GDELT_PAGE_2 = {
     "articles": [
-        {"url": "https://a.test/3", "title": "Older C", "seendate": "20240614T080000Z",
-         "domain": "a.test", "language": "English", "sourcecountry": "France"},
+        {
+            "url": "https://a.test/3",
+            "title": "Older C",
+            "seendate": "20240614T080000Z",
+            "domain": "a.test",
+            "language": "English",
+            "sourcecountry": "France",
+        },
     ]
 }
 _NEWSAPI_ERROR = {"status": "error", "code": "apiKeyMissing", "message": "Your API key is missing."}
@@ -78,6 +97,7 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 def main() -> int:
+    """Start the mock news API and run the haybarn SQL E2E suite against it."""
     server = HTTPServer(("127.0.0.1", 0), _Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

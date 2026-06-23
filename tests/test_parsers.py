@@ -68,9 +68,7 @@ def test_gdelt_extra_json_carries_unmapped_fields():
 
 
 def test_gdelt_tone_parsed_when_present():
-    row = gdelt.map_article(
-        {"title": "x", "url": "u", "seendate": "20240615T120000Z", "tone": "-3.5"}
-    )
+    row = gdelt.map_article({"title": "x", "url": "u", "seendate": "20240615T120000Z", "tone": "-3.5"})
     assert row.tone == -3.5
 
 

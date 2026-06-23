@@ -97,6 +97,7 @@ class GDELTProvider(Provider):
     requires_key: ClassVar[bool] = False
 
     def __init__(self, *, base_url: str | None = None, timeout: float = 20.0) -> None:
+        """Construct the GDELT provider with an optional ``base_url`` override and timeout."""
         self.base_url = base_url or _DEFAULT_BASE_URL
         self.timeout = timeout
 
@@ -112,6 +113,7 @@ class GDELTProvider(Provider):
         language: str | None,
         api_key: str | None,  # unused: GDELT needs no key
     ) -> PageResult:
+        """Fetch one window-paged page of GDELT results for ``query``."""
         if not query or not query.strip():
             raise ProviderError("gdelt: query must be a non-empty string")
 

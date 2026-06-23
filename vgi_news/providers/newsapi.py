@@ -121,6 +121,7 @@ class NewsAPIProvider(Provider):
     requires_key: ClassVar[bool] = True
 
     def __init__(self, *, base_url: str | None = None, timeout: float = 20.0) -> None:
+        """Construct the NewsAPI provider with an optional ``base_url`` override and timeout."""
         self.base_url = base_url or _DEFAULT_BASE_URL
         self.timeout = timeout
 
@@ -136,6 +137,7 @@ class NewsAPIProvider(Provider):
         language: str | None,
         api_key: str | None,
     ) -> PageResult:
+        """Fetch one page-numbered page of NewsAPI results for ``query``."""
         if not query or not query.strip():
             raise ProviderError("newsapi: query must be a non-empty string")
         if not api_key:

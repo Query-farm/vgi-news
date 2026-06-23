@@ -87,8 +87,14 @@ def test_newsapi_requires_key(mock_newsapi):
     provider = get_provider("newsapi", base_url=mock_newsapi)
     try:
         provider.search(
-            "x", count=2, timespan="1d", window_end=None, page=1,
-            country=None, language=None, api_key=None,
+            "x",
+            count=2,
+            timespan="1d",
+            window_end=None,
+            page=1,
+            country=None,
+            language=None,
+            api_key=None,
         )
         raise AssertionError("expected ProviderError for missing key")
     except ProviderError as exc:

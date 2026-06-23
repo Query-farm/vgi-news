@@ -114,6 +114,8 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
     FunctionArguments: ClassVar[type] = NewsSearchArgs
 
     class Meta:
+        """Function metadata."""
+
         name = "news_search"
         description = "Search global news coverage (GDELT by default; NewsAPI with a key)"
         categories = ["news", "search", "http"]
@@ -135,6 +137,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
 
     @classmethod
     def on_bind(cls, params: BindParams[NewsSearchArgs]) -> BindResponse:
+        """Validate the query/provider and resolve the NewsAPI secret when required."""
         a = params.args
         if not a.query or not a.query.strip():
             raise ValueError("news_search requires a non-empty query")
@@ -153,6 +156,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
 
     @classmethod
     def initial_state(cls, params: ProcessParams[NewsSearchArgs]) -> NewsScanState:
+        """Return the empty pagination cursor for a fresh scan."""
         return NewsScanState()
 
     # -- helpers ------------------------------------------------------------
@@ -178,6 +182,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
         state: NewsScanState,
         out: OutputCollector,
     ) -> None:
+        """Fetch the next provider page, emit its rows, and advance the cursor."""
         a = params.args
         if state.done or state.emitted >= a.count:
             out.finish()

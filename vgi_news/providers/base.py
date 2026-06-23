@@ -81,6 +81,18 @@ def http_get_json(
 ) -> Any:
     """GET ``url`` and return parsed JSON, with bounded retry on 429/5xx.
 
+    Args:
+        url: The URL to GET.
+        params: Query-string parameters.
+        timeout: Per-request timeout in seconds.
+        headers: Optional request headers.
+        max_retries: Maximum number of attempts before giving up.
+        backoff: Base backoff (seconds) for the exponential retry delay.
+        _sleep: Injectable sleep function (for tests).
+
+    Returns:
+        The parsed JSON body.
+
     Raises:
         ProviderError: On a non-retryable HTTP error, exhausted retries, a
             transport/timeout failure, or a non-JSON body.
@@ -124,7 +136,9 @@ class Provider(Protocol):
     #: Whether this provider needs an API key (resolved via the secret provider).
     requires_key: ClassVar[bool]
 
-    def __init__(self, *, base_url: str | None = None, timeout: float = 20.0) -> None: ...
+    def __init__(self, *, base_url: str | None = None, timeout: float = 20.0) -> None:
+        """Construct the provider with an optional ``base_url`` override and timeout."""
+        ...
 
     def search(
         self,
@@ -149,8 +163,11 @@ class Provider(Protocol):
                 the first page.
             page: For page-paging providers, the 1-based page number. ``None``
                 for the first page.
-            country / language: Optional filters (provider-mapped; ignored if
-                unsupported).
+            country: Optional country filter (provider-mapped; ignored if unsupported).
+            language: Optional language filter (provider-mapped; ignored if unsupported).
             api_key: Resolved API key for key-based providers, else ``None``.
+
+        Returns:
+            One page of results plus the cursor for the next page.
         """
         ...

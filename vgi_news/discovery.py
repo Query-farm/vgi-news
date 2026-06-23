@@ -53,6 +53,8 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
     FIXED_SCHEMA: ClassVar[pa.Schema] = _PROVIDERS_SCHEMA
 
     class Meta:
+        """Function metadata."""
+
         name = "news_providers"
         description = "List available news providers and whether each requires an API key"
         categories = ["news", "metadata"]
@@ -65,11 +67,13 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
 
     @classmethod
     def cardinality(cls, params: BindParams[_NoArgs]) -> TableCardinality:
+        """Return the fixed provider-count cardinality."""
         n = len(provider_names())
         return TableCardinality(estimate=n, max=n)
 
     @classmethod
     def process(cls, params: ProcessParams[_NoArgs], state: None, out: OutputCollector) -> None:
+        """Emit one row per provider with its key requirement."""
         names = provider_names()
         out.emit(
             pa.RecordBatch.from_pydict(
