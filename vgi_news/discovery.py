@@ -59,13 +59,61 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
         description = "List available news providers and whether each requires an API key"
         categories = ["news", "metadata"]
         tags = {
-            "vgi.columns_md": (
+            "vgi.title": "List News Providers",
+            "vgi.doc_llm": (
+                "# news_providers\n\n"
+                "Introspection table function that lists every news provider this worker can route "
+                "`news_search` to, and whether each one needs an API key. It contacts no external "
+                "service, so it always runs offline — use it to discover valid `provider :=` values "
+                "and to decide whether you must create a secret before searching.\n\n"
+                "## When to use\n\n"
+                "- Discover which providers are available (e.g. before picking `provider :=`).\n"
+                "- Check whether a provider needs an API key (so you know to create a DuckDB "
+                "secret first).\n"
+                "- As a cheap, backend-free smoke test that the worker is attached and healthy.\n\n"
+                "## Inputs\n\n"
+                "None — call it with empty parentheses: `news_providers()`.\n\n"
+                "## Outputs\n\n"
+                "One row per provider with `provider` (the name to pass to `news_search`) and "
+                "`requires_key` (whether an API key must be supplied via the secret provider). "
+                "`gdelt` returns `false` (free, no key); `newsapi` returns `true`."
+            ),
+            "vgi.doc_md": (
+                "# News Providers\n\n"
+                "`news_providers()` lists the news providers this worker supports and whether each "
+                "requires an API key. It takes no arguments and makes no network calls.\n\n"
+                "## Usage\n\n"
+                "```sql\n"
+                "SELECT provider, requires_key\n"
+                "FROM news.main.news_providers()\n"
+                "ORDER BY provider;\n"
+                "```\n\n"
+                "## Notes\n\n"
+                "- `gdelt` is free and needs no key (`requires_key = false`); it is the default "
+                "provider for `news_search`.\n"
+                "- `newsapi` needs an API key (`requires_key = true`) supplied via a `TYPE newsapi` "
+                "DuckDB secret.\n"
+                "- This function is a safe, backend-free way to verify the worker is reachable."
+            ),
+            "vgi.keywords": (
+                "news providers, list providers, discovery, metadata, gdelt, newsapi, api key, "
+                "requires key, introspection, capabilities, available sources"
+            ),
+            "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/vgi_news/discovery.py",
+            "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
                 "| `provider` | VARCHAR | Provider name to pass as `provider := '...'` "
                 "(e.g. `gdelt`, `newsapi`). |\n"
                 "| `requires_key` | BOOLEAN | Whether the provider needs an API key supplied via "
                 "the secret provider. |"
+            ),
+            "vgi.executable_examples": (
+                '[{"description": "List the available news providers and whether each '
+                'requires an API key.", "sql": "SELECT provider, requires_key FROM '
+                'news.main.news_providers() ORDER BY provider"}, '
+                '{"description": "Count how many news providers are available.", '
+                '"sql": "SELECT count(*) AS provider_count FROM news.main.news_providers()"}]'
             ),
         }
         examples = [

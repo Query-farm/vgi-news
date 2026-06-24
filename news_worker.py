@@ -58,14 +58,26 @@ _CATALOG_DESCRIPTION_MD = (
 )
 
 _SCHEMA_DESCRIPTION_LLM = (
-    "News-search table functions: news_search (query worldwide news articles, returning title, url, "
-    "domain, language, seendate, country, tone, and source) and news_providers (list the available "
-    "news providers and whether each requires an API key)."
+    "# news.main\n\n"
+    "The single schema of the news worker. It holds two table functions over a unified article "
+    "schema:\n\n"
+    "- `news_search(query, ...)` — search worldwide news articles, returning `title, url, domain, "
+    "language, seendate, country, tone, source, extra`.\n"
+    "- `news_providers()` — list the available providers and whether each requires an API key.\n\n"
+    "Use `news_providers()` first to discover valid `provider :=` values, then `news_search()` to "
+    "retrieve and filter coverage. GDELT is the default (free, no key, includes sentiment `tone`); "
+    "NewsAPI requires a `TYPE newsapi` secret."
 )
 
 _SCHEMA_DESCRIPTION_MD = (
-    "News-search table functions over a unified article schema: `news_search` (article search) and "
-    "`news_providers` (provider discovery)."
+    "# news.main\n\n"
+    "News-search table functions over a unified article schema.\n\n"
+    "## Functions\n\n"
+    "- `news_search` — query worldwide news articles by free text.\n"
+    "- `news_providers` — discover available providers and key requirements.\n\n"
+    "## Notes\n\n"
+    "All functions return the same column set regardless of provider, so callers can switch "
+    "providers without changing their SQL."
 )
 
 _NEWS_CATALOG = Catalog(
@@ -74,8 +86,13 @@ _NEWS_CATALOG = Catalog(
     comment="Global news search (GDELT by default; NewsAPI with a key) for SQL.",
     source_url="https://github.com/Query-farm/vgi-news",
     tags={
-        "vgi.description_llm": _CATALOG_DESCRIPTION_LLM,
-        "vgi.description_md": _CATALOG_DESCRIPTION_MD,
+        "vgi.title": "Global News Search",
+        "vgi.keywords": (
+            "news, news search, articles, headlines, gdelt, newsapi, journalism, media, coverage, "
+            "press, current events, sentiment, tone, world news, current affairs"
+        ),
+        "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
+        "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
         "vgi.author": "Query.Farm",
         "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
         "vgi.license": "MIT",
@@ -87,8 +104,27 @@ _NEWS_CATALOG = Catalog(
             name="main",
             comment="Global news search (GDELT by default; NewsAPI with a key) for SQL",
             tags={
-                "vgi.description_llm": _SCHEMA_DESCRIPTION_LLM,
-                "vgi.description_md": _SCHEMA_DESCRIPTION_MD,
+                "vgi.title": "News — main",
+                "vgi.keywords": (
+                    "news, news search, news_search, news_providers, articles, headlines, gdelt, "
+                    "newsapi, media, coverage, sentiment, tone, providers"
+                ),
+                "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/news_worker.py",
+                # VGI123 classifying tags use BARE keys (not vgi.-namespaced).
+                "domain": "media-and-news",
+                "category": "search",
+                "topic": "news-articles",
+                "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
+                "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
+                # VGI506 representative, catalog-qualified example queries.
+                "vgi.example_queries": (
+                    "SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider;\n"
+                    "SELECT title, url, seendate, tone "
+                    "FROM news.main.news_search('climate summit', count := 10);\n"
+                    "SELECT domain, count(*) AS articles "
+                    "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
+                    "GROUP BY domain ORDER BY articles DESC;"
+                ),
             },
             functions=[*TABLE_FUNCTIONS, *DISCOVERY_FUNCTIONS],
         ),
