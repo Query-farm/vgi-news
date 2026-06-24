@@ -119,6 +119,23 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
         name = "news_search"
         description = "Search global news coverage (GDELT by default; NewsAPI with a key)"
         categories = ["news", "search", "http"]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `title` | VARCHAR | Article headline. |\n"
+                "| `url` | VARCHAR | Canonical article URL. |\n"
+                "| `domain` | VARCHAR | Publisher domain (e.g. `bbc.co.uk`). |\n"
+                "| `language` | VARCHAR | Article language (provider-reported; codes vary). |\n"
+                "| `seendate` | TIMESTAMP WITH TIME ZONE | When the article was first seen/published "
+                "(UTC); NULL if unknown. |\n"
+                "| `country` | VARCHAR | Source country (FIPS/ISO as the provider reports it). |\n"
+                "| `tone` | DOUBLE | Sentiment tone (GDELT only; NULL for providers without "
+                "sentiment). |\n"
+                "| `source` | VARCHAR | Provider that produced this row (e.g. `gdelt`, `newsapi`). |\n"
+                "| `extra` | VARCHAR | Provider-specific fields, JSON-encoded. |"
+            ),
+        }
         examples = [
             FunctionExample(
                 sql="SELECT title, url, seendate FROM news.news_search('climate summit', count := 10)",

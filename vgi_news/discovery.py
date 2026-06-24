@@ -58,6 +58,16 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
         name = "news_providers"
         description = "List available news providers and whether each requires an API key"
         categories = ["news", "metadata"]
+        tags = {
+            "vgi.columns_md": (
+                "| column | type | description |\n"
+                "|---|---|---|\n"
+                "| `provider` | VARCHAR | Provider name to pass as `provider := '...'` "
+                "(e.g. `gdelt`, `newsapi`). |\n"
+                "| `requires_key` | BOOLEAN | Whether the provider needs an API key supplied via "
+                "the secret provider. |"
+            ),
+        }
         examples = [
             FunctionExample(
                 sql="SELECT * FROM news.news_providers() ORDER BY provider",
