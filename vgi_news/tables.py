@@ -21,6 +21,7 @@ at bind time — never inline in SQL. GDELT needs no key.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, ClassVar
@@ -179,11 +180,26 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "- GDELT enforces a ~1 request / 5 seconds rate limit and has no deep cursor, so very "
                 "large look-backs are approximated at window edges."
             ),
-            "vgi.keywords": (
-                "news, news search, articles, headlines, gdelt, newsapi, journalism, media, coverage, "
-                "press, current events, sentiment, tone, search, http, current affairs"
+            "vgi.keywords": json.dumps(
+                [
+                    "news",
+                    "news search",
+                    "articles",
+                    "headlines",
+                    "gdelt",
+                    "newsapi",
+                    "journalism",
+                    "media",
+                    "coverage",
+                    "press",
+                    "current events",
+                    "sentiment",
+                    "tone",
+                    "search",
+                    "http",
+                    "current affairs",
+                ]
             ),
-            "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/vgi_news/tables.py",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"

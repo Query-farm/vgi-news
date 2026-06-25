@@ -8,6 +8,7 @@ introspect the worker from SQL:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -95,11 +96,21 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
                 "DuckDB secret.\n"
                 "- This function is a safe, backend-free way to verify the worker is reachable."
             ),
-            "vgi.keywords": (
-                "news providers, list providers, discovery, metadata, gdelt, newsapi, api key, "
-                "requires key, introspection, capabilities, available sources"
+            "vgi.keywords": json.dumps(
+                [
+                    "news providers",
+                    "list providers",
+                    "discovery",
+                    "metadata",
+                    "gdelt",
+                    "newsapi",
+                    "api key",
+                    "requires key",
+                    "introspection",
+                    "capabilities",
+                    "available sources",
+                ]
             ),
-            "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/vgi_news/discovery.py",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"

@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http]>=0.8.4",
+#     "vgi-python[http]>=0.8.5",
 #     "httpx>=0.27",
 # ]
 # ///
@@ -28,8 +28,10 @@ optional **newsapi** provider needs an API key supplied via a DuckDB secret
 
 from __future__ import annotations
 
+import json
+
 from vgi import Worker
-from vgi.catalog import Catalog, Schema
+from vgi.catalog import Catalog, Schema, View
 
 from vgi_news.discovery import DISCOVERY_FUNCTIONS
 from vgi_news.tables import TABLE_FUNCTIONS
@@ -80,6 +82,65 @@ _SCHEMA_DESCRIPTION_MD = (
     "providers without changing their SQL."
 )
 
+# VGI311 — `news_providers()` is parameterless and always returns the same rows,
+# so we also expose it as a regular VIEW of the same name. That lets consumers
+# write `SELECT * FROM news.main.news_providers` (no parentheses); the view simply
+# scans the backing table function.
+_NEWS_PROVIDERS_VIEW = View(
+    name="news_providers",
+    definition="SELECT provider, requires_key FROM news.main.news_providers()",
+    comment="Discovery table of every news provider and whether it needs an API key.",
+    column_comments={
+        "provider": "Provider name to pass as provider := '...' to news_search (e.g. 'gdelt', 'newsapi').",
+        "requires_key": "Whether the provider needs an API key supplied via a DuckDB secret.",
+    },
+    tags={
+        "vgi.title": "News Providers (table)",
+        "vgi.doc_llm": (
+            "A ready-to-scan **discovery table** of every news provider this worker can route "
+            "`news_search` to, with `provider` (the name to pass as `provider :=`) and "
+            "`requires_key` (whether an API key must be supplied via a DuckDB secret). This is the "
+            "no-argument table form of the `news_providers()` table function -- query it directly "
+            "with `SELECT * FROM news.main.news_providers` (no parentheses). `gdelt` needs no key "
+            "(free); `newsapi` requires a `TYPE newsapi` secret. It makes no network calls."
+        ),
+        "vgi.doc_md": (
+            "## news_providers (view)\n\n"
+            "Every supported news **provider**, one per row, as a plain table.\n\n"
+            "`provider` is the name to pass to `news_search` via `provider :=`; `requires_key` is "
+            "whether it needs an API key (via a `TYPE newsapi` DuckDB secret). The no-argument "
+            "table form of `news_providers()` -- scan it with `SELECT * FROM news.main.news_providers` "
+            "(no parentheses). `gdelt` is free (no key); `newsapi` requires a key. No network calls."
+        ),
+        "vgi.keywords": json.dumps(
+            [
+                "news providers",
+                "list providers",
+                "discovery",
+                "metadata",
+                "gdelt",
+                "newsapi",
+                "api key",
+                "requires key",
+                "introspection",
+                "capabilities",
+                "available sources",
+                "providers table",
+            ]
+        ),
+        "domain": "media-and-news",
+        "category": "search",
+        "topic": "news-providers",
+        "vgi.example_queries": (
+            '[{"description": "List the available news providers and whether each requires a key.", '
+            '"sql": "SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider"}, '
+            '{"description": "Count how many news providers are available.", '
+            '"sql": "SELECT count(*) AS provider_count FROM news.main.news_providers"}]'
+        ),
+    },
+)
+
+
 _NEWS_CATALOG = Catalog(
     name="news",
     default_schema="main",
@@ -87,9 +148,24 @@ _NEWS_CATALOG = Catalog(
     source_url="https://github.com/Query-farm/vgi-news",
     tags={
         "vgi.title": "Global News Search",
-        "vgi.keywords": (
-            "news, news search, articles, headlines, gdelt, newsapi, journalism, media, coverage, "
-            "press, current events, sentiment, tone, world news, current affairs"
+        "vgi.keywords": json.dumps(
+            [
+                "news",
+                "news search",
+                "articles",
+                "headlines",
+                "gdelt",
+                "newsapi",
+                "journalism",
+                "media",
+                "coverage",
+                "press",
+                "current events",
+                "sentiment",
+                "tone",
+                "world news",
+                "current affairs",
+            ]
         ),
         "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
         "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
@@ -105,11 +181,23 @@ _NEWS_CATALOG = Catalog(
             comment="Global news search (GDELT by default; NewsAPI with a key) for SQL",
             tags={
                 "vgi.title": "News — main",
-                "vgi.keywords": (
-                    "news, news search, news_search, news_providers, articles, headlines, gdelt, "
-                    "newsapi, media, coverage, sentiment, tone, providers"
+                "vgi.keywords": json.dumps(
+                    [
+                        "news",
+                        "news search",
+                        "news_search",
+                        "news_providers",
+                        "articles",
+                        "headlines",
+                        "gdelt",
+                        "newsapi",
+                        "media",
+                        "coverage",
+                        "sentiment",
+                        "tone",
+                        "providers",
+                    ]
                 ),
-                "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/news_worker.py",
                 # VGI123 classifying tags use BARE keys (not vgi.-namespaced).
                 "domain": "media-and-news",
                 "category": "search",
@@ -127,6 +215,7 @@ _NEWS_CATALOG = Catalog(
                 ),
             },
             functions=[*TABLE_FUNCTIONS, *DISCOVERY_FUNCTIONS],
+            views=[_NEWS_PROVIDERS_VIEW],
         ),
     ],
 )
