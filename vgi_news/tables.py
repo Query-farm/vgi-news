@@ -245,7 +245,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
     @staticmethod
     def _api_key(params: ProcessParams[NewsSearchArgs]) -> str | None:
         """Extract the NewsAPI key from resolved secrets, if present."""
-        secret = (params.secrets or {}).get(NEWSAPI_SECRET_TYPE)
+        secret = params.secrets.get(NEWSAPI_SECRET_TYPE)
         if not secret:
             return None
         for key in ("api_key", "apiKey", "key", "token"):
