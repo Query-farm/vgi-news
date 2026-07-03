@@ -121,6 +121,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
         categories = ["news", "search", "http"]
         tags = {
             "vgi.title": "Global News Article Search",
+            "vgi.category": "search",
             "vgi.doc_llm": (
                 "# news_search\n\n"
                 "Search worldwide news coverage by free-text query and return a **unified article "
@@ -183,7 +184,6 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "news, news search, articles, headlines, gdelt, newsapi, journalism, media, coverage, "
                 "press, current events, sentiment, tone, search, http, current affairs"
             ),
-            "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/vgi_news/tables.py",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -202,8 +202,8 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
         }
         examples = [
             FunctionExample(
-                sql="SELECT title, url, seendate FROM news.news_search('climate summit', count := 10)",
-                description="Latest 10 GDELT articles mentioning 'climate summit' from the past day",
+                sql="SELECT title, url, seendate FROM news.news_search('election', count := 10, timespan := '1w')",
+                description="Latest 10 GDELT articles mentioning 'election' from the past week",
             ),
             FunctionExample(
                 sql=(

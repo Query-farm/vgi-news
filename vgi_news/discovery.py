@@ -60,6 +60,7 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
         categories = ["news", "metadata"]
         tags = {
             "vgi.title": "List News Providers",
+            "vgi.category": "discovery",
             "vgi.doc_llm": (
                 "# news_providers\n\n"
                 "Introspection table function that lists every news provider this worker can route "
@@ -99,7 +100,6 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
                 "news providers, list providers, discovery, metadata, gdelt, newsapi, api key, "
                 "requires key, introspection, capabilities, available sources"
             ),
-            "vgi.source_url": "https://github.com/Query-farm/vgi-news/blob/main/vgi_news/discovery.py",
             "vgi.result_columns_md": (
                 "| column | type | description |\n"
                 "|---|---|---|\n"
@@ -107,13 +107,6 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
                 "(e.g. `gdelt`, `newsapi`). |\n"
                 "| `requires_key` | BOOLEAN | Whether the provider needs an API key supplied via "
                 "the secret provider. |"
-            ),
-            "vgi.executable_examples": (
-                '[{"description": "List the available news providers and whether each '
-                'requires an API key.", "sql": "SELECT provider, requires_key FROM '
-                'news.main.news_providers() ORDER BY provider"}, '
-                '{"description": "Count how many news providers are available.", '
-                '"sql": "SELECT count(*) AS provider_count FROM news.main.news_providers()"}]'
             ),
         }
         examples = [
