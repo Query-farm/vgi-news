@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http]>=0.9.0",
+#     "vgi-python[http]>=0.14.0",
 #     "httpx>=0.27",
 # ]
 # ///
@@ -135,9 +135,15 @@ _SCHEMA_CATEGORIES = json.dumps(
     ]
 )
 
-#: Analyst tasks the linter's agent-check (VGI152/VGI920) replays. All reference
-#: the keyless, offline ``news_providers()`` surface so the graded results are
-#: deterministic (news_search rows are inherently time-varying).
+#: Analyst tasks the linter's agent-check (VGI152/VGI920) replays. The discovery
+#: tasks reference the keyless, offline ``news_providers()`` surface, so their
+#: graded results are deterministic. The ``search_returns_articles`` task exercises
+#: ``news_search`` for coverage (VGI520); because it necessarily contacts the live
+#: GDELT upstream (rate-limited, time-varying), it is phrased as a boolean
+#: "did anything come back" predicate rather than an exact-value compare, and it is
+#: only graded when the linter runs with a live upstream (``--execute``). In CI the
+#: lint gate runs offline (``execute: "false"``) — see .github/workflows/ci.yml and
+#: the live SQL E2E job, which executes ``news_search`` against a local mock.
 _AGENT_TEST_TASKS = json.dumps(
     [
         {
@@ -160,6 +166,19 @@ _AGENT_TEST_TASKS = json.dumps(
             ),
             "ignore_column_names": True,
             "unordered": True,
+        },
+        {
+            "name": "search_returns_articles",
+            "prompt": (
+                "Search recent worldwide news coverage of 'climate' with the default provider and "
+                "confirm at least one article comes back."
+            ),
+            # Boolean threshold predicate (not an exact-value compare): news_search
+            # rows depend on the live GDELT feed, so the only stable assertion is
+            # "the search returned something". Table-function args are inline
+            # literals (a table function cannot bind a column reference).
+            "reference_sql": "SELECT count(*) > 0 AS has_articles FROM news.main.news_search('climate', count := 5)",
+            "ignore_column_names": True,
         },
     ]
 )
@@ -242,10 +261,8 @@ _NEWS_CATALOG = Catalog(
                             "# News Providers\n\n"
                             "Lists the providers this worker supports and whether each requires an API "
                             "key. It is backend-free, so it is a safe way to verify the worker is "
-                            "attached. Scan it with no parentheses:\n\n"
-                            "```sql\n"
-                            "SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider;\n"
-                            "```"
+                            "attached. Scan it with no parentheses (it is a plain table). Runnable "
+                            "queries are attached as this table's example queries."
                         ),
                         # One runnable, deterministic, offline example (VGI509/VGI906): the
                         # paren-less table scan always returns the fixed provider list. Its

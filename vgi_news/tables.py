@@ -21,6 +21,7 @@ at bind time — never inline in SQL. GDELT needs no key.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, ClassVar
@@ -55,7 +56,16 @@ class NewsSearchArgs:
     ]
     count: Annotated[int, Arg("count", default=25, doc="Total max rows to return across all pages.", ge=1)]
     timespan: Annotated[
-        str, Arg("timespan", default="1d", doc="Look-back window, e.g. '1d', '6h', '2w' (provider-mapped).")
+        str,
+        Arg(
+            "timespan",
+            default="1d",
+            doc=(
+                "Look-back window as a duration string (a count followed by a unit such as h for "
+                "hours, d for days, or w for weeks). Any duration the provider accepts works — this "
+                "is an open range, not a fixed vocabulary — and it is mapped per provider."
+            ),
+        ),
     ]
     country: Annotated[str, Arg("country", default="", doc="Optional source-country filter (provider-mapped).")]
     language: Annotated[str, Arg("language", default="", doc="Optional source-language filter (provider-mapped).")]
@@ -162,16 +172,8 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "## Overview\n\n"
                 "Pass a free-text `query` and get back recent articles with their headline, URL, "
                 "publisher domain, language, publish time, source country, sentiment tone, the "
-                "originating provider, and a JSON `extra` blob of provider-specific fields.\n\n"
-                "## Usage\n\n"
-                "```sql\n"
-                "-- Latest GDELT coverage of a topic from the past day\n"
-                "SELECT title, url, seendate, tone\n"
-                "FROM news.main.news_search('climate summit', count := 10);\n\n"
-                "-- Narrow by country and a longer window\n"
-                "SELECT domain, title\n"
-                "FROM news.main.news_search('elections', timespan := '2d', country := 'US');\n"
-                "```\n\n"
+                "originating provider, and a JSON `extra` blob of provider-specific fields. "
+                "Runnable queries are attached as this function's example queries.\n\n"
                 "## Notes\n\n"
                 "- Default provider is **GDELT** (free, no API key, includes `tone`).\n"
                 "- **NewsAPI** requires a `TYPE newsapi` DuckDB secret holding an `api_key`; never "
@@ -184,30 +186,57 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "news, news search, articles, headlines, gdelt, newsapi, journalism, media, coverage, "
                 "press, current events, sentiment, tone, search, http, current affairs"
             ),
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `title` | VARCHAR | Article headline. |\n"
-                "| `url` | VARCHAR | Canonical article URL. |\n"
-                "| `domain` | VARCHAR | Publisher domain (e.g. `bbc.co.uk`). |\n"
-                "| `language` | VARCHAR | Article language (provider-reported; codes vary). |\n"
-                "| `seendate` | TIMESTAMP WITH TIME ZONE | When the article was first seen/published "
-                "(UTC); NULL if unknown. |\n"
-                "| `country` | VARCHAR | Source country (FIPS/ISO as the provider reports it). |\n"
-                "| `tone` | DOUBLE | Sentiment tone (GDELT only; NULL for providers without "
-                "sentiment). |\n"
-                "| `source` | VARCHAR | Provider that produced this row (e.g. `gdelt`, `newsapi`). |\n"
-                "| `extra` | VARCHAR | Provider-specific fields, JSON-encoded. |"
+            # Structured static result schema (VGI307/VGI321): the unified article
+            # schema is identical for every provider. Replaces the retired free-form
+            # vgi.result_columns_md (VGI414).
+            "vgi.result_columns_schema": json.dumps(
+                [
+                    {"name": "title", "type": "VARCHAR", "description": "Article headline."},
+                    {"name": "url", "type": "VARCHAR", "description": "Canonical article URL."},
+                    {"name": "domain", "type": "VARCHAR", "description": "Publisher domain (e.g. bbc.co.uk)."},
+                    {
+                        "name": "language",
+                        "type": "VARCHAR",
+                        "description": "Article language as reported by the provider (code scheme varies).",
+                    },
+                    {
+                        "name": "seendate",
+                        "type": "TIMESTAMPTZ",
+                        "description": "When the article was first seen/published (UTC); NULL if unknown.",
+                    },
+                    {
+                        "name": "country",
+                        "type": "VARCHAR",
+                        "description": "Source country as the provider reports it (FIPS/ISO code scheme).",
+                    },
+                    {
+                        "name": "tone",
+                        "type": "DOUBLE",
+                        "description": "Sentiment tone (GDELT only; NULL for providers without sentiment).",
+                    },
+                    {
+                        "name": "source",
+                        "type": "VARCHAR",
+                        "description": "Provider that produced this row (e.g. gdelt, newsapi).",
+                    },
+                    {
+                        "name": "extra",
+                        "type": "VARCHAR",
+                        "description": "Provider-specific fields, JSON-encoded.",
+                    },
+                ]
             ),
         }
         examples = [
             FunctionExample(
-                sql="SELECT title, url, seendate FROM news.news_search('election', count := 10, timespan := '1w')",
+                sql=(
+                    "SELECT title, url, seendate FROM news.main.news_search('election', count := 10, timespan := '1w')"
+                ),
                 description="Latest 10 GDELT articles mentioning 'election' from the past week",
             ),
             FunctionExample(
                 sql=(
-                    "SELECT title, source FROM news.news_search('elections', provider := 'newsapi', "
+                    "SELECT title, source FROM news.main.news_search('elections', provider := 'newsapi', "
                     "count := 20, timespan := '2d')"
                 ),
                 description="NewsAPI search (requires a TYPE newsapi secret with api_key)",

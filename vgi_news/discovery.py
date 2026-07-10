@@ -8,6 +8,7 @@ introspect the worker from SQL:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -83,36 +84,40 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
                 "# News Providers\n\n"
                 "`news_providers()` lists the news providers this worker supports and whether each "
                 "requires an API key. It takes no arguments and makes no network calls.\n\n"
-                "## Usage\n\n"
-                "```sql\n"
-                "SELECT provider, requires_key\n"
-                "FROM news.main.news_providers()\n"
-                "ORDER BY provider;\n"
-                "```\n\n"
                 "## Notes\n\n"
                 "- `gdelt` is free and needs no key (`requires_key = false`); it is the default "
                 "provider for `news_search`.\n"
                 "- `newsapi` needs an API key (`requires_key = true`) supplied via a `TYPE newsapi` "
                 "DuckDB secret.\n"
-                "- This function is a safe, backend-free way to verify the worker is reachable."
+                "- This function is a safe, backend-free way to verify the worker is reachable.\n\n"
+                "Runnable queries are attached as this object's example queries."
             ),
             "vgi.keywords": (
                 "news providers, list providers, discovery, metadata, gdelt, newsapi, api key, "
                 "requires key, introspection, capabilities, available sources"
             ),
-            "vgi.result_columns_md": (
-                "| column | type | description |\n"
-                "|---|---|---|\n"
-                "| `provider` | VARCHAR | Provider name to pass as `provider := '...'` "
-                "(e.g. `gdelt`, `newsapi`). |\n"
-                "| `requires_key` | BOOLEAN | Whether the provider needs an API key supplied via "
-                "the secret provider. |"
+            # Structured static result schema (VGI307/VGI321): the paren-less
+            # provider list always returns these two columns. Replaces the retired
+            # free-form vgi.result_columns_md (VGI414).
+            "vgi.result_columns_schema": json.dumps(
+                [
+                    {
+                        "name": "provider",
+                        "type": "VARCHAR",
+                        "description": "Provider name to pass as provider := '...' (e.g. gdelt, newsapi).",
+                    },
+                    {
+                        "name": "requires_key",
+                        "type": "BOOLEAN",
+                        "description": "Whether the provider needs an API key supplied via the secret provider.",
+                    },
+                ]
             ),
         }
         examples = [
             FunctionExample(
-                sql="SELECT * FROM news.news_providers() ORDER BY provider",
-                description="List providers and their key requirements",
+                sql="SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider",
+                description="List each provider and whether it requires an API key",
             ),
         ]
 
