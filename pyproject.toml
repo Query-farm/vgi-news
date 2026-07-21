@@ -26,6 +26,21 @@ dev = [
 http = [
     "vgi-python[http]>=0.16.0",
 ]
+# HTTP-serving extra installed by the Docker image (`pip install '.[serve]'`).
+# Alias of `http`: pulls in vgi-python's http extra so `vgi-serve --http` (which
+# serves /health + the VGI RPC surface) is available in the container.
+serve = [
+    "vgi-python[http]>=0.16.0",
+]
+
+[project.scripts]
+# Console entry point DuckDB's vgi extension can spawn as a stdio worker
+# LOCATION, and that the Docker `stdio` transport execs.
+vgi-news-worker = "vgi_news.worker:main"
+
+[project.urls]
+Repository = "https://github.com/Query-farm/vgi-news"
+Issues = "https://github.com/Query-farm/vgi-news/issues"
 
 [build-system]
 requires = ["hatchling"]
