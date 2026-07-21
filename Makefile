@@ -11,8 +11,11 @@
 # haybarn-unittest runner, pointed at a local mock news API (no network, no
 # keys) via scripts/run_sql_e2e.py.
 
-# The command DuckDB runs for the `vgi` extension's ATTACH.
-VGI_NEWS_WORKER ?= uv run --python 3.13 news_worker.py
+# The command DuckDB runs for the `vgi` extension's ATTACH. Use the synced venv
+# interpreter (deps resolved from the lockfile, plain `.venv/bin/python` ignores
+# the PEP 723 header) so the E2E hits the same SDK CI's integration job pins —
+# never `uv run <script>`, whose ephemeral PEP 723 env can cache a stale SDK.
+VGI_NEWS_WORKER ?= .venv/bin/python news_worker.py
 
 HAYBARN ?= haybarn-unittest
 LOCAL_BIN := $(HOME)/.local/bin

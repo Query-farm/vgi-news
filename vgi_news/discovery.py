@@ -113,11 +113,30 @@ class NewsProviders(TableFunctionGenerator[_NoArgs]):
                     },
                 ]
             ),
+            # VGI515: the native duckdb_functions().examples carrier drops the
+            # per-example descriptions, so mirror the FunctionExample list here as
+            # a described {description, sql} JSON tag (byte-identical SQL).
+            "vgi.example_queries": json.dumps(
+                [
+                    {
+                        "description": "List each provider and whether it requires an API key.",
+                        "sql": "SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider",
+                    },
+                    {
+                        "description": "List only the free providers that need no API key.",
+                        "sql": "SELECT provider FROM news.main.news_providers() WHERE requires_key = false",
+                    },
+                ]
+            ),
         }
         examples = [
             FunctionExample(
                 sql="SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider",
                 description="List each provider and whether it requires an API key",
+            ),
+            FunctionExample(
+                sql="SELECT provider FROM news.main.news_providers() WHERE requires_key = false",
+                description="List only the free providers that need no API key",
             ),
         ]
 

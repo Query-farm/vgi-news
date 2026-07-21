@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#     "vgi-python[http]>=0.14.0",
+#     "vgi-python[http]>=0.16.0",
 #     "httpx>=0.27",
 # ]
 # ///
@@ -215,14 +215,27 @@ _NEWS_CATALOG = Catalog(
                 "topic": "news-articles",
                 "vgi.doc_llm": _SCHEMA_DESCRIPTION_LLM,
                 "vgi.doc_md": _SCHEMA_DESCRIPTION_MD,
-                # VGI506 representative, catalog-qualified example queries.
-                "vgi.example_queries": (
-                    "SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider;\n"
-                    "SELECT title, url, seendate, tone "
-                    "FROM news.main.news_search('climate summit', count := 10);\n"
-                    "SELECT domain, count(*) AS articles "
-                    "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
-                    "GROUP BY domain ORDER BY articles DESC;"
+                # VGI506/VGI515 representative, catalog-qualified example queries as a
+                # described {description, sql} JSON list.
+                "vgi.example_queries": json.dumps(
+                    [
+                        {
+                            "description": "List the available providers and their key requirements.",
+                            "sql": "SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider",
+                        },
+                        {
+                            "description": "Fetch the 10 most recent headlines mentioning 'climate summit'.",
+                            "sql": "SELECT title, url, seendate, tone "
+                            "FROM news.main.news_search('climate summit', count := 10)",
+                        },
+                        {
+                            "description": "Rank domains by how many 'elections' articles they ran in the "
+                            "last two days.",
+                            "sql": "SELECT domain, count(*) AS articles "
+                            "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
+                            "GROUP BY domain ORDER BY articles DESC",
+                        },
+                    ]
                 ),
             },
             # VGI311: expose the parameterless, deterministic discovery function

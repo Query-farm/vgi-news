@@ -5,11 +5,9 @@
 # working directory).
 
 [execution]
-# The worker's CI `location` is `uv run news_worker.py`. Because the entrypoint
-# carries a PEP 723 inline-metadata header, every `uv run` spawn resolves an
-# ephemeral environment before the worker starts, so a single ATTACH + query
-# round-trip costs ~5-12s of pure launch overhead — independent of the (trivial,
-# offline) example query itself. Raise the slow-example threshold above that
-# launch cost so VGI908 doesn't flag the deterministic `news_providers` example
-# for cold-start time that isn't a real query-performance problem.
+# The worker attaches via `.venv/bin/python news_worker.py`. Cold worker spawn +
+# ATTACH + query round-trip can still cost several seconds on a loaded CI runner,
+# independent of the (trivial, offline) example query itself. Keep the slow-example
+# threshold well above that launch cost so VGI908 doesn't flag the deterministic
+# `news_providers` example for spawn time that isn't a real query-performance problem.
 slow_seconds = 30.0

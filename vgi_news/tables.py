@@ -153,7 +153,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "- `page_size :=` (default 50): rows fetched per upstream request / per scan tick.\n\n"
                 "## Outputs\n\n"
                 "One row per article over `title, url, domain, language, seendate, country, tone, "
-                "source, extra`. `seendate` is a real `TIMESTAMP WITH TIME ZONE`; `tone` is a DOUBLE "
+                "source, extra`. `seendate` is a real `TIMESTAMP WITH TIME ZONE`; `tone` is a `DOUBLE` "
                 "sentiment score (GDELT only, NULL otherwise); `extra` carries provider-specific "
                 "fields as a JSON string.\n\n"
                 "## Behavior & edge cases\n\n"
@@ -226,6 +226,29 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                     },
                 ]
             ),
+            # VGI515: the native duckdb_functions().examples carrier drops the
+            # per-example descriptions, so mirror the FunctionExample list here as
+            # a described {description, sql} JSON tag (byte-identical SQL).
+            "vgi.example_queries": json.dumps(
+                [
+                    {
+                        "description": "Latest 10 GDELT articles mentioning 'election' from the past week.",
+                        "sql": "SELECT title, url, seendate "
+                        "FROM news.main.news_search('election', count := 10, timespan := '1w')",
+                    },
+                    {
+                        "description": "Count how many domains are covering 'elections' over the last two days.",
+                        "sql": "SELECT domain, count(*) AS articles "
+                        "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
+                        "GROUP BY domain ORDER BY articles DESC",
+                    },
+                    {
+                        "description": "NewsAPI search (requires a TYPE newsapi secret with an api_key).",
+                        "sql": "SELECT title, source "
+                        "FROM news.main.news_search('elections', provider := 'newsapi', count := 20, timespan := '2d')",
+                    },
+                ]
+            ),
         }
         examples = [
             FunctionExample(
@@ -233,6 +256,14 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                     "SELECT title, url, seendate FROM news.main.news_search('election', count := 10, timespan := '1w')"
                 ),
                 description="Latest 10 GDELT articles mentioning 'election' from the past week",
+            ),
+            FunctionExample(
+                sql=(
+                    "SELECT domain, count(*) AS articles "
+                    "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
+                    "GROUP BY domain ORDER BY articles DESC"
+                ),
+                description="Count how many domains are covering 'elections' over the last two days",
             ),
             FunctionExample(
                 sql=(

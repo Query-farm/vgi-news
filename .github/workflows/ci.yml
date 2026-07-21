@@ -111,7 +111,12 @@ jobs:
       - name: vgi-lint
         uses: Query-farm/vgi-lint-check@v1
         with:
-          location: "uv run news_worker.py"
+          # Attach via the synced venv interpreter (deps from the frozen lockfile),
+          # NOT `uv run news_worker.py`: a `uv run` spawn resolves the PEP 723 header
+          # into an ephemeral, cacheable env that can serve a stale SDK and emit the
+          # old catalog schema, producing a false schema-mismatch. `.venv/bin/python`
+          # ignores the PEP 723 header and uses exactly what `uv sync` installed.
+          location: ".venv/bin/python news_worker.py"
           fail-on: info
           execute: "false"
 
