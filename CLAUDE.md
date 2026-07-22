@@ -84,6 +84,23 @@ make lint        # ruff + mypy (both must be clean)
 - Provider errors must surface as a clean DuckDB error (`ValueError` from
   `process`), never an uncaught crash. `http_get_json` does the bounded retry on
   429/5xx and raises `ProviderError` on failure.
+- **A 429 is not a transient 5xx — back off for the upstream's rate window.**
+  GDELT documents ~1 request / 5s and 429s above it, so retrying inside that
+  window is guaranteed to 429 again. `http_get_json` keeps the quick 0.5s/1.0s
+  exponential backoff for 5xx but waits `_RATE_LIMIT_BACKOFF` (5s, then 10s) on
+  a 429, and honours a longer `Retry-After` when the server sends one. The old
+  sub-second retry turned any single rate-limited request into a hard failure
+  after three requests in ~1.5s — and spent two of them inside the forbidden
+  window, prolonging the penalty. Worst case is now 3x20s + 5s + 10s = 75s,
+  which `vgi-lint.toml` deliberately sits above (`scan_timeout = 90`) so
+  vgi-lint never cancels the scan first and leaves a wedged cursor (VGI911).
+- **Lint with execution from the repo root:** `uvx --from vgi-lint-check
+  vgi-lint lint ".venv/bin/python news_worker.py" --execute --fail-on info`
+  reaches 100/100, 0 findings, **L2 behavioral**. It must run from the root so
+  `vgi-lint.toml` is discovered. It makes ~6 real GDELT calls and takes ~2min;
+  back-to-back runs can trip GDELT's rate limit, so give it a breather rather
+  than assuming a regression. CI keeps `execute: "false"` for that reason (the
+  SQL E2E covers execution hermetically against a mock).
 - Adding a provider: implement the `Provider` protocol in `providers/`, register
   it in `providers/__init__._PROVIDERS`, add a fixture + parser test, and a mock
   route. The unified schema does not change.

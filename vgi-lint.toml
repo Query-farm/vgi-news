@@ -2,12 +2,57 @@
 #
 # This file is discovered by both the local `vgi-lint` CLI and the
 # `Query-farm/vgi-lint-check@v1` CI action (which reads config from the
-# working directory).
+# working directory). No rule is waived and `execution` stays enabled — this
+# only sizes the execution *window* to the upstream this worker exists to talk
+# to.
 
 [execution]
-# The worker attaches via `.venv/bin/python news_worker.py`. Cold worker spawn +
-# ATTACH + query round-trip can still cost several seconds on a loaded CI runner,
-# independent of the (trivial, offline) example query itself. Keep the slow-example
-# threshold well above that launch cost so VGI908 doesn't flag the deterministic
-# `news_providers` example for spawn time that isn't a real query-performance problem.
-slow_seconds = 30.0
+# Why this worker needs a wide execution window (measured, not assumed).
+#
+# `news_search` is a live-network table function: its only backend is the free
+# GDELT DOC API (api.gdeltproject.org), a slow public endpoint. Every scan here
+# costs exactly ONE upstream round-trip before the first batch — `process()`
+# fetches a single page per tick and emits it (`vgi_news/tables.py`), and it
+# asks for `maxrecords = min(count, page_size)`, i.e. exactly the rows the query
+# wants. Nothing is prefetched, no sitemap/index is crawled, and no work happens
+# after the response arrives beyond parsing one JSON page.
+#
+# The cost is the endpoint itself. Measured with plain `curl` against the exact
+# probe URL (`?query=election&maxrecords=10&timespan=1w&sort=DateDesc`), so the
+# worker is not in the loop at all:
+#
+#   HTTP 200, 10 rows   time-to-first-byte 27.6s
+#   HTTP 429            time-to-first-byte 11.1s / 12.0s / 14.1s / 16.2s
+#
+# GDELT also documents a ~1 request / 5 seconds limit and answers 429 above it.
+# So a single `SELECT * FROM news_search(...) LIMIT 10` cannot come back inside
+# the 10s default no matter how the worker is written. That is an irreducible
+# network cost, not a hanging or unbounded scan.
+#
+# (The 429s themselves were a separate, REAL worker defect — the retry backed
+# off 0.5s, well inside GDELT's 5s window, so every retry of a 429 also 429'd.
+# That is fixed in `providers/base.py`; this setting covers only the latency.)
+scan_timeout = 90.0
+
+# The worker's own bound on that uncancellable first-batch window: httpx with a
+# 20s per-request timeout (`VGI_NEWS_TIMEOUT`) and a bounded 3-attempt retry —
+# 0.5s/1.0s backoff for a transient 5xx, but 5s then 10s for a 429 so the retry
+# lands outside GDELT's documented rate window (`_RATE_LIMIT_BACKOFF` in
+# `providers/base.py`). Worst case 3x20s + 5s + 10s = 75s before `process()`
+# gives up and raises a clean DuckDB error. The linter's caps must sit ABOVE
+# that bound, otherwise vgi-lint cancels first and (per VGI911) the cursor is
+# left wedged instead of receiving the worker's own tidy error.
+timeout = 120.0
+
+# Examples hit the same endpoint, so the "slow example" threshold has to clear a
+# real GDELT round-trip too; anything under this is upstream latency, not a
+# query-performance problem in the worker. (This also still covers the cold
+# worker spawn + ATTACH cost this file previously documented.)
+slow_seconds = 90.0
+
+# Serialize execution. GDELT asks for no more than one request every 5 seconds;
+# probing the scan and replaying the examples in parallel fires several requests
+# at once and earns a self-inflicted 429 storm. One at a time is both the polite
+# and the reliable choice — each call already takes longer than that 5s window,
+# so serializing costs no extra wall-clock beyond the requests themselves.
+concurrency = 1

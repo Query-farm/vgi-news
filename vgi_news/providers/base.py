@@ -68,6 +68,43 @@ class PageResult:
 # Retry on these statuses (rate limiting + transient upstream failures).
 _RETRY_STATUS = {429, 500, 502, 503, 504}
 
+# Minimum delay before retrying a 429 (HTTP "Too Many Requests").
+#
+# This is NOT the same class of wait as the transient-5xx backoff. A 429 means
+# the upstream told us we exceeded a documented request rate, so retrying inside
+# that rate window is guaranteed to earn another 429. GDELT — the default (and
+# free, keyless) provider — documents ~1 request / 5 seconds and answers 429
+# above it, so a sub-second retry is not merely useless: it spends two more
+# requests inside the forbidden window and prolongs the penalty.
+#
+# Measured against the live endpoint: with the old 0.5s/1.0s exponential backoff
+# every retry of a 429 also returned 429, so one rate-limited request always
+# became a hard failure after three requests in ~1.5s.
+_RATE_LIMIT_BACKOFF = 5.0
+
+
+def _retry_after_seconds(resp: httpx.Response) -> float | None:
+    """Return the response's ``Retry-After`` delay in seconds, if it gives one.
+
+    Only the delta-seconds form is honoured (the HTTP-date form is rare in
+    practice and not worth the clock-skew risk). Returns None when the header is
+    absent or unparseable, so the caller can fall back to its own backoff.
+
+    Args:
+        resp: The HTTP response to inspect.
+
+    Returns:
+        The delay in seconds, or None.
+    """
+    raw = resp.headers.get("retry-after")
+    if not raw:
+        return None
+    try:
+        seconds = float(raw.strip())
+    except ValueError:
+        return None
+    return seconds if seconds >= 0 else None
+
 
 def http_get_json(
     url: str,
@@ -77,9 +114,14 @@ def http_get_json(
     headers: dict[str, str] | None = None,
     max_retries: int = 3,
     backoff: float = 0.5,
+    rate_limit_backoff: float = _RATE_LIMIT_BACKOFF,
     _sleep: Any = time.sleep,
 ) -> Any:
     """GET ``url`` and return parsed JSON, with bounded retry on 429/5xx.
+
+    A 429 waits at least ``rate_limit_backoff`` (or the server's ``Retry-After``
+    when it sends a longer one), because retrying inside the upstream's
+    documented rate window just earns another 429.
 
     Args:
         url: The URL to GET.
@@ -88,6 +130,7 @@ def http_get_json(
         headers: Optional request headers.
         max_retries: Maximum number of attempts before giving up.
         backoff: Base backoff (seconds) for the exponential retry delay.
+        rate_limit_backoff: Minimum delay (seconds) before retrying a 429.
         _sleep: Injectable sleep function (for tests).
 
     Returns:
@@ -107,7 +150,17 @@ def http_get_json(
             continue
 
         if resp.status_code in _RETRY_STATUS and attempt < max_retries - 1:
-            _sleep(backoff * (2**attempt))
+            delay = backoff * (2**attempt)
+            if resp.status_code == 429:
+                # Respect the upstream's own rate window, not our 5xx backoff,
+                # and escalate: a server that is still rate-limiting us after
+                # one window is telling us to wait longer, not to try again at
+                # the same cadence. Gives 5s then 10s at the default.
+                delay = max(delay, rate_limit_backoff * (2**attempt))
+                retry_after = _retry_after_seconds(resp)
+                if retry_after is not None:
+                    delay = max(delay, retry_after)
+            _sleep(delay)
             continue
         if resp.status_code >= 400:
             body = resp.text[:200].replace("\n", " ")

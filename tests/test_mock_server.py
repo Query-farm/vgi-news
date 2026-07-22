@@ -133,3 +133,48 @@ def test_http_get_json_4xx_raises_clean():
             assert "HTTP 400" in str(exc)
     finally:
         server.shutdown()
+
+
+def test_http_get_json_429_waits_for_the_rate_window():
+    """A 429 must back off at least the upstream's rate window, not ~0.5s.
+
+    GDELT documents ~1 request / 5 seconds; retrying inside that window is
+    guaranteed to earn another 429, so the sub-second exponential backoff used
+    for transient 5xx is the wrong wait for a rate limit.
+    """
+    state = {"calls": 0}
+    slept: list[float] = []
+
+    def route(query):
+        state["calls"] += 1
+        if state["calls"] == 1:
+            return 429, {"error": "Please limit requests to one every 5 seconds"}
+        return 200, {"ok": True}
+
+    server, base = make_server({"/r": route})
+    try:
+        out = http_get_json(f"{base}/r", params={}, timeout=5, backoff=0.5, _sleep=slept.append)
+        assert out == {"ok": True}
+        assert slept, "a 429 should have slept before retrying"
+        assert slept[0] >= 5.0, f"429 backoff was {slept[0]}s, want >= 5s"
+    finally:
+        server.shutdown()
+
+
+def test_http_get_json_5xx_keeps_the_fast_backoff():
+    """A transient 5xx is not a rate limit, so it keeps the quick retry."""
+    state = {"calls": 0}
+    slept: list[float] = []
+
+    def route(query):
+        state["calls"] += 1
+        if state["calls"] == 1:
+            return 503, {"error": "temporarily unavailable"}
+        return 200, {"ok": True}
+
+    server, base = make_server({"/r": route})
+    try:
+        http_get_json(f"{base}/r", params={}, timeout=5, backoff=0.5, _sleep=slept.append)
+        assert slept == [0.5], f"5xx backoff should stay fast, got {slept}"
+    finally:
+        server.shutdown()
