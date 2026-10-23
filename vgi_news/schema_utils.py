@@ -11,6 +11,8 @@ TIME ZONE``. ``extra`` is JSON carried as VARCHAR.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pyarrow as pa
 
 #: Arrow type for the ``seendate`` column. Microsecond precision, UTC tz, so
@@ -24,7 +26,7 @@ def field(
     comment: str,
     *,
     nullable: bool = True,
-) -> pa.Field:
+) -> pa.Field[Any]:
     """Build a ``pa.Field`` carrying a column comment in its metadata.
 
     The ``comment`` metadata key is the framework's transport for column

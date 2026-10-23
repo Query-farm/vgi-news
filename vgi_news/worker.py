@@ -132,7 +132,10 @@ _SCHEMA_CATEGORIES = json.dumps(
     ]
 )
 
-#: Analyst tasks the linter's agent-check (VGI152/VGI920) replays. The discovery
+#: Analyst tasks the linter's agent-check (VGI152/VGI920) replays. Only each task's
+#: ``name`` and ``prompt`` are published here (VGI416); the private graders
+#: (``reference_sql`` and grading options) live in ``vgi-agent-tests.yaml`` at the
+#: repo root, merged by task name. The discovery
 #: tasks reference the keyless, offline ``news_providers()`` surface, so their
 #: graded results are deterministic. The ``search_returns_articles`` task exercises
 #: ``news_search`` for coverage (VGI520); because it necessarily contacts the live
@@ -146,23 +149,14 @@ _AGENT_TEST_TASKS = json.dumps(
         {
             "name": "list_providers",
             "prompt": ("List every news provider this worker supports and whether each one requires an API key."),
-            "reference_sql": "SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider",
-            "ignore_column_names": True,
         },
         {
             "name": "count_providers",
             "prompt": "How many news providers can I search?",
-            "reference_sql": "SELECT count(*) AS provider_count FROM news.main.news_providers()",
-            "ignore_column_names": True,
         },
         {
             "name": "keyless_providers",
             "prompt": "Which news providers can I use for free, without supplying an API key?",
-            "reference_sql": (
-                "SELECT provider FROM news.main.news_providers() WHERE requires_key = false ORDER BY provider"
-            ),
-            "ignore_column_names": True,
-            "unordered": True,
         },
         {
             "name": "search_returns_articles",
@@ -170,12 +164,6 @@ _AGENT_TEST_TASKS = json.dumps(
                 "Search recent worldwide news coverage of 'climate' with the default provider and "
                 "confirm at least one article comes back."
             ),
-            # Boolean threshold predicate (not an exact-value compare): news_search
-            # rows depend on the live GDELT feed, so the only stable assertion is
-            # "the search returned something". Table-function args are inline
-            # literals (a table function cannot bind a column reference).
-            "reference_sql": "SELECT count(*) > 0 AS has_articles FROM news.main.news_search('climate', count := 5)",
-            "ignore_column_names": True,
         },
     ]
 )
@@ -199,7 +187,7 @@ _NEWS_CATALOG = Catalog(
     },
     schemas=[
         Schema(
-            name="main",
+            path=["main"],
             comment="Global news search (GDELT by default; NewsAPI with a key) for SQL",
             tags={
                 "vgi.title": "News — main",

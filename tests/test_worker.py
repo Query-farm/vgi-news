@@ -107,7 +107,7 @@ def gdelt_paging_server():
 
 def test_news_providers_lists_providers():
     with _client() as client:
-        table = _collect(client.table_function(function_name="news_providers"))
+        table = _collect(client.table_function(function_name="news_providers", schema_path=["main"]))
     assert table.column_names == ["provider", "requires_key"]
     providers = dict(zip(table.column("provider").to_pylist(), table.column("requires_key").to_pylist(), strict=True))
     assert providers == {"gdelt": False, "newsapi": True}
@@ -119,6 +119,7 @@ def test_news_search_unified_schema_and_types(mock_gdelt, worker_env):
         table = _collect(
             client.table_function(
                 function_name="news_search",
+                schema_path=["main"],
                 arguments=Arguments(positional=[pa.scalar("climate summit")]),
             )
         )
@@ -153,6 +154,7 @@ def test_scan_state_round_trips_across_batch_boundary(gdelt_paging_server, worke
         table = _collect(
             client.table_function(
                 function_name="news_search",
+                schema_path=["main"],
                 arguments=Arguments(
                     positional=[pa.scalar("anything")],
                     named={
@@ -177,6 +179,7 @@ def test_newsapi_path_via_mock_requires_secret(mock_newsapi, worker_env):
         _collect(
             client.table_function(
                 function_name="news_search",
+                schema_path=["main"],
                 arguments=Arguments(
                     positional=[pa.scalar("elections")],
                     named={"provider": pa.scalar("newsapi")},
@@ -191,6 +194,7 @@ def test_unknown_provider_errors_clean():
         _collect(
             client.table_function(
                 function_name="news_search",
+                schema_path=["main"],
                 arguments=Arguments(
                     positional=[pa.scalar("x")],
                     named={"provider": pa.scalar("nope")},
