@@ -14,7 +14,9 @@ extension from the Haybarn community channel:
 1. **Install the worker** — `uv sync --frozen --extra http` into a venv.
    `news_worker.py` is a self-contained PEP 723 worker the extension can spawn
    via `uv run news_worker.py` (stdio) or boot over `--http` / `--unix`.
-2. **Download the runner** — the matching `haybarn_unittest-*` asset per platform.
+2. **Download the runner** — the matching `haybarn_unittest-*` asset per platform
+   from the newest haybarn 2.0 (`haybarn-v2.0.*`) release. The worker speaks VGI
+   protocol vgi.v3 / 3.1, which only the haybarn 2.0 community `vgi` extension accepts.
 3. **Preprocess** — [`preprocess-require.awk`](preprocess-require.awk) rewrites
    each `require <ext>` into an explicit signed `INSTALL <ext> FROM
    {community,core}; LOAD <ext>;`, and injects `INSTALL vgi FROM community;`
@@ -24,7 +26,8 @@ extension from the Haybarn community channel:
 4. **Run** — [`run-integration.sh`](run-integration.sh) stages the preprocessed
    tree, starts the mock news server, resolves `VGI_NEWS_WORKER` (the ATTACH
    `LOCATION`) per `$TRANSPORT`, warms the extension cache once, then runs the
-   suite in a single `haybarn-unittest` invocation, guarded against silent skips.
+   suite in a single `haybarn-unittest --keep-home` invocation (haybarn-unittest 2.0
+   isolates `$HOME`), guarded against silent skips.
 
 ## The mock-driven worker (all transports)
 

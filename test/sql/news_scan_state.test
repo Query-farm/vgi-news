@@ -15,7 +15,7 @@ statement ok
 LOAD vgi;
 
 statement ok
-ATTACH 'news' AS news (TYPE vgi, LOCATION '${VGI_NEWS_WORKER}');
+ATTACH 'news' AS news (TYPE vgi, LOCATION '{VGI_NEWS_WORKER}');
 
 # count := 3 spans two windows; page_size := 2 forces the cross-batch hop.
 query I

@@ -1,7 +1,7 @@
 # vgi-lint-check configuration for the vgi-news worker.
 #
 # This file is discovered by both the local `vgi-lint` CLI and the
-# `Query-farm/vgi-lint-check@v1` CI action (which reads config from the
+# `Query-farm/vgi-lint-check@v2` CI action (which reads config from the
 # working directory). No rule is waived and `execution` stays enabled — this
 # only sizes the execution *window* to the upstream this worker exists to talk
 # to.

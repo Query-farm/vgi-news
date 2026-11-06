@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 
 from vgi import Worker
-from vgi.catalog import Catalog, Schema, Table
+from vgi.catalog import Catalog, ConstraintInfo, Schema, Table, constraint_record
 
 from vgi_news.discovery import NewsProviders
 from vgi_news.tables import TABLE_FUNCTIONS
@@ -168,6 +168,27 @@ _AGENT_TEST_TASKS = json.dumps(
     ]
 )
 
+
+def _trusted(table: str, constraint_id: str, kind: str, columns: list[list[str]]) -> ConstraintInfo:
+    """Build an enforced, all-rows constraint record on a table in the ``main`` schema.
+
+    DuckDB only reads ENFORCED + ALL_ROWS records, so declare one only when every
+    row the table can return satisfies it.
+
+    Args:
+        table: The table the constraint belongs to.
+        constraint_id: Identifier unique within the table.
+        kind: ``PRIMARY_KEY``, ``UNIQUE``, ``NOT_NULL``, ``CHECK`` or ``FOREIGN_KEY``.
+        columns: Column paths the constraint covers, e.g. ``[["provider"]]``.
+
+    Returns:
+        The canonical constraint record.
+    """
+    return constraint_record(
+        ["main"], table, constraint_id, kind, columns, enforcement="ENFORCED", validation="ALL_ROWS"
+    )
+
+
 _NEWS_CATALOG = Catalog(
     name="news",
     default_schema="main",
@@ -234,8 +255,10 @@ _NEWS_CATALOG = Catalog(
                     inline_bind=True,
                     comment="Available news providers and whether each requires an API key.",
                     # 'provider' is unique, so it's the natural primary key.
-                    primary_key=(("provider",),),
-                    not_null=("provider", "requires_key"),
+                    constraints=(
+                        _trusted("news_providers", "pk", "PRIMARY_KEY", [["provider"]]),
+                        _trusted("news_providers", "requires_key_not_null", "NOT_NULL", [["requires_key"]]),
+                    ),
                     tags={
                         "vgi.title": "Available News Providers & Key Requirements",
                         "vgi.category": "discovery",

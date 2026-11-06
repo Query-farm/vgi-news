@@ -112,7 +112,9 @@ def main() -> int:
     env.setdefault("VGI_NEWS_TIMEOUT", "10")
 
     haybarn = env.get("HAYBARN", "haybarn-unittest")
-    cmd = [haybarn, "--test-dir", str(ROOT), "test/sql/*"]
+    # --keep-home: haybarn-unittest 2.0 isolates $HOME per run, which would hide the
+    # vgi extension installed under the real home (~/.haybarn).
+    cmd = [haybarn, "--keep-home", "--test-dir", str(ROOT), "test/sql/*"]
     print(f"[run_sql_e2e] mock at {base}; worker = {env['VGI_NEWS_WORKER']}")
     try:
         proc = subprocess.run(cmd, env=env, cwd=str(ROOT))

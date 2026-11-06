@@ -12,7 +12,7 @@ statement ok
 LOAD vgi;
 
 statement ok
-ATTACH 'news' AS news (TYPE vgi, LOCATION '${VGI_NEWS_WORKER}');
+ATTACH 'news' AS news (TYPE vgi, LOCATION '{VGI_NEWS_WORKER}');
 
 # ---- Unified schema: exactly these 9 columns, in order ----------------------
 

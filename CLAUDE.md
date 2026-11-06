@@ -94,8 +94,8 @@ make lint        # ruff + mypy (both must be clean)
   window, prolonging the penalty. Worst case is now 3x20s + 5s + 10s = 75s,
   which `vgi-lint.toml` deliberately sits above (`scan_timeout = 90`) so
   vgi-lint never cancels the scan first and leaves a wedged cursor (VGI911).
-- **Lint with execution from the repo root:** `uvx --from vgi-lint-check
-  vgi-lint lint ".venv/bin/python news_worker.py" --execute --fail-on info`
+- **Lint with execution from the repo root:** `uvx --prerelease allow --from
+  'vgi-lint-check>=2.0.1,<3' vgi-lint lint ".venv/bin/python news_worker.py" --execute --fail-on info`
   reaches 100/100, 0 findings, **L2 behavioral**. It must run from the root so
   `vgi-lint.toml` is discovered. It makes ~6 real GDELT calls and takes ~2min;
   back-to-back runs can trip GDELT's rate limit, so give it a breather rather
