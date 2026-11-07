@@ -1,6 +1,6 @@
 [project]
 name = "vgi-news"
-version = "0.1.0"
+version = "0.2.0"
 description = "A VGI worker bringing global news search (GDELT, NewsAPI) into DuckDB/SQL"
 readme = "README.md"
 requires-python = ">=3.13"
