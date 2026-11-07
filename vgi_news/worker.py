@@ -31,7 +31,7 @@ from vgi import Worker
 from vgi.catalog import Catalog, ConstraintInfo, Schema, Table, constraint_record
 
 from vgi_news.discovery import NewsProviders
-from vgi_news.tables import TABLE_FUNCTIONS
+from vgi_news.tables import NEWSAPI_SECRET_SPEC, TABLE_FUNCTIONS
 
 _CATALOG_DESCRIPTION_LLM = (
     "Search global news coverage from SQL. The news_search table function queries worldwide news "
@@ -331,6 +331,7 @@ class NewsWorker(Worker):
     """Worker process hosting the ``news`` catalog."""
 
     catalog = _NEWS_CATALOG
+    secret_types = [NEWSAPI_SECRET_SPEC]  # noqa: RUF012 - declarative worker configuration
 
 
 def main() -> None:

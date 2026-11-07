@@ -28,6 +28,7 @@ from typing import Annotated, ClassVar
 
 import pyarrow as pa
 from vgi.arguments import Arg
+from vgi.catalog.secret_type import SecretTypeSpec
 from vgi.invocation import BindResponse
 from vgi.metadata import FunctionExample
 from vgi.table_function import (
@@ -44,6 +45,18 @@ from .schema_utils import NEWS_SCHEMA
 
 #: Secret type for the NewsAPI key (resolved via the secret provider).
 NEWSAPI_SECRET_TYPE = "newsapi"
+
+#: Catalog declaration of the ``newsapi`` secret type (``Worker.secret_types``),
+#: so ``CREATE SECRET (TYPE newsapi, api_key '...')`` is accepted and tools can
+#: see the optional credential. GDELT (the default provider) needs no key.
+NEWSAPI_SECRET_SPEC = SecretTypeSpec(
+    name=NEWSAPI_SECRET_TYPE,
+    description=(
+        "Optional NewsAPI.org key, needed only for news_search(..., provider := 'newsapi'); "
+        "the default GDELT provider is keyless."
+    ),
+    schema=pa.schema([pa.field("api_key", pa.string(), metadata={"redact": "true"})]),
+)
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -305,7 +318,14 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
     @staticmethod
     def _api_key(params: ProcessParams[NewsSearchArgs]) -> str | None:
         """Extract the NewsAPI key from resolved secrets, if present."""
-        secret = params.secrets.get(NEWSAPI_SECRET_TYPE)
+        secrets = params.secrets
+        # Resolved secrets are keyed by DuckDB secret *name* (``__default_newsapi``
+        # for an unnamed ``CREATE SECRET (TYPE newsapi, ...)``); ``lookup`` selects
+        # by the secret's type. Fall back to a plain by-type key for dict callers.
+        lookup = getattr(secrets, "lookup", None)
+        secret = lookup(NEWSAPI_SECRET_TYPE) if callable(lookup) else None
+        if not secret:
+            secret = secrets.get(NEWSAPI_SECRET_TYPE)
         if not secret:
             return None
         for key in ("api_key", "apiKey", "key", "token"):
