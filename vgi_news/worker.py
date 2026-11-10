@@ -196,6 +196,7 @@ _NEWS_CATALOG = Catalog(
     source_url="https://github.com/Query-farm/vgi-news",
     tags={
         "vgi.title": "Global News Search",
+        "vgi.subtitle": "Search worldwide news articles from SQL via GDELT (free) or NewsAPI (with a key).",
         "vgi.keywords": _CATALOG_KEYWORDS,
         "vgi.doc_llm": _CATALOG_DESCRIPTION_LLM,
         "vgi.doc_md": _CATALOG_DESCRIPTION_MD,
@@ -211,7 +212,7 @@ _NEWS_CATALOG = Catalog(
             path=["main"],
             comment="Global news search (GDELT by default; NewsAPI with a key) for SQL",
             tags={
-                "vgi.title": "News — main",
+                "vgi.title": "News Search",
                 "vgi.keywords": _SCHEMA_KEYWORDS,
                 # VGI413 navigation registry; each object names one of these via vgi.category.
                 "vgi.categories": _SCHEMA_CATEGORIES,
@@ -260,7 +261,7 @@ _NEWS_CATALOG = Catalog(
                         _trusted("news_providers", "requires_key_not_null", "NOT_NULL", [["requires_key"]]),
                     ),
                     tags={
-                        "vgi.title": "Available News Providers & Key Requirements",
+                        "vgi.title": "Available Providers",
                         "vgi.category": "discovery",
                         # VGI123 classifying tags use BARE keys (not vgi.-namespaced).
                         "domain": "media-and-news",
