@@ -55,7 +55,19 @@ NEWSAPI_SECRET_SPEC = SecretTypeSpec(
         "Optional NewsAPI.org key, needed only for news_search(..., provider := 'newsapi'); "
         "the default GDELT provider is keyless."
     ),
-    schema=pa.schema([pa.field("api_key", pa.string(), metadata={"redact": "true"})]),
+    schema=pa.schema(
+        [
+            pa.field(
+                "api_key",
+                pa.string(),
+                metadata={
+                    "redact": "true",
+                    "vgi_doc": "NewsAPI.org API key, shown on your account page after registering at newsapi.org.",
+                },
+            )
+        ],
+        metadata={"vgi_doc_url": "https://newsapi.org/register"},
+    ),
 )
 
 

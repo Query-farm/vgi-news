@@ -47,36 +47,30 @@ _CATALOG_DESCRIPTION_LLM = (
 _CATALOG_DESCRIPTION_MD = (
     "# news\n\n"
     "Global news search as a DuckDB/SQL VGI worker.\n\n"
-    "Query worldwide news coverage with a single unified schema regardless of provider.\n\n"
-    "**Table functions**\n\n"
-    "- `news_search(query, provider := ..., count := ..., timespan := ..., country := ..., "
-    "language := ..., page_size := ...)` — search news articles.\n"
-    "- `news_providers()` — list available providers and their API-key requirements.\n\n"
+    "Query worldwide news coverage by free text and get one unified article schema (`title, url, "
+    "domain, language, seendate, country, tone, source, extra`) regardless of provider, with a "
+    "look-back window, optional country/language filters, and row-count paging.\n\n"
     "**Providers**: `gdelt` (default, free, no key, worldwide with sentiment tone) and `newsapi` "
-    "(requires a `TYPE newsapi` secret with an `api_key`)."
+    "(requires a `TYPE newsapi` secret with an `api_key`). The provider list and each provider's "
+    "key requirement are queryable from SQL."
 )
 
 _SCHEMA_DESCRIPTION_LLM = (
     "# news.main\n\n"
-    "The single schema of the news worker. It holds two table functions over a unified article "
-    "schema:\n\n"
-    "- `news_search(query, ...)` — search worldwide news articles, returning `title, url, domain, "
-    "language, seendate, country, tone, source, extra`.\n"
-    "- `news_providers()` — list the available providers and whether each requires an API key.\n\n"
-    "Use `news_providers()` first to discover valid `provider :=` values, then `news_search()` to "
-    "retrieve and filter coverage. GDELT is the default (free, no key, includes sentiment `tone`); "
-    "NewsAPI requires a `TYPE newsapi` secret."
+    "The single schema of the news worker: free-text search over worldwide news articles, returning "
+    "a unified article schema (`title, url, domain, language, seendate, country, tone, source, "
+    "extra`) whatever the provider. Discover the valid `provider :=` values and whether each needs "
+    "an API key first, then search and filter coverage. GDELT is the default (free, no key, "
+    "includes sentiment `tone`); NewsAPI requires a `TYPE newsapi` secret."
 )
 
 _SCHEMA_DESCRIPTION_MD = (
     "# news.main\n\n"
-    "News-search table functions over a unified article schema.\n\n"
-    "## Functions\n\n"
-    "- `news_search` — query worldwide news articles by free text.\n"
-    "- `news_providers` — discover available providers and key requirements.\n\n"
+    "News search over a unified article schema.\n\n"
     "## Notes\n\n"
-    "All functions return the same column set regardless of provider, so callers can switch "
-    "providers without changing their SQL."
+    "Every result has the same column set regardless of provider, so callers can switch "
+    "providers without changing their SQL. GDELT is the default (free, no key); NewsAPI needs a "
+    "`TYPE newsapi` secret."
 )
 
 _CATALOG_KEYWORDS = json.dumps(

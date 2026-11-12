@@ -16,7 +16,7 @@ extension from the Haybarn community channel:
    via `uv run news_worker.py` (stdio) or boot over `--http` / `--unix`.
 2. **Download the runner** — the matching `haybarn_unittest-*` asset per platform
    from the newest haybarn 2.0 (`haybarn-v2.0.*`) release. The worker speaks VGI
-   protocol vgi.v3 / 3.2, which only the haybarn 2.0 community `vgi` extension accepts.
+   protocol vgi.v3 / 3.3, which only the haybarn 2.0 community `vgi` extension accepts.
 3. **Preprocess** — [`preprocess-require.awk`](preprocess-require.awk) rewrites
    each `require <ext>` into an explicit signed `INSTALL <ext> FROM
    {community,core}; LOAD <ext>;`, and injects `INSTALL vgi FROM community;`

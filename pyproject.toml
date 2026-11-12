@@ -1,6 +1,6 @@
 [project]
 name = "vgi-news"
-version = "0.3.0"
+version = "0.4.0"
 description = "A VGI worker bringing global news search (GDELT, NewsAPI) into DuckDB/SQL"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -8,7 +8,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Query Farm" }]
 keywords = ["vgi", "duckdb", "news", "gdelt", "newsapi", "search"]
 dependencies = [
-    "vgi-python>=0.50.0",
+    "vgi-python>=0.51.0",
     "httpx>=0.27",
     "pyarrow>=16",
 ]
@@ -25,13 +25,13 @@ dev = [
 # addition to stdio/AF_UNIX. That path needs vgi-python's `http` extra
 # (waitress). CI's http transport leg installs this via `uv sync --extra http`.
 http = [
-    "vgi-python[http]>=0.50.0",
+    "vgi-python[http]>=0.51.0",
 ]
 # HTTP-serving extra installed by the Docker image (`pip install '.[serve]'`).
 # Alias of `http`: pulls in vgi-python's http extra so `vgi-serve --http` (which
 # serves /health + the VGI RPC surface) is available in the container.
 serve = [
-    "vgi-python[http]>=0.50.0",
+    "vgi-python[http]>=0.51.0",
 ]
 
 [project.scripts]
