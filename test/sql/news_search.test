@@ -78,5 +78,15 @@ WHERE tone IS NULL;
 ----
 2
 
+# ---- Composed example: two news_search calls joined on domain -------------
+# Mirrors COMPOSED_OVERLAP_EXAMPLE in vgi_news/tables.py (the published
+# "outlets covering both topics" example). The mock answers every query with
+# the same two a.test articles, so a.test appears on both sides with 2 each.
+
+query TII
+WITH climate AS (SELECT domain, count(*) AS climate_articles FROM news.main.news_search('climate', count := 100, page_size := 100, timespan := '1d') GROUP BY domain), election AS (SELECT domain, count(*) AS election_articles FROM news.main.news_search('election', count := 100, page_size := 100, timespan := '1d') GROUP BY domain) SELECT domain, climate_articles, election_articles FROM climate JOIN election USING (domain) ORDER BY climate_articles + election_articles DESC, domain LIMIT 10
+----
+a.test	2	2
+
 statement ok
 DETACH news;

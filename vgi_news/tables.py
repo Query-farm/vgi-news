@@ -43,6 +43,28 @@ from vgi_rpc.rpc import OutputCollector
 from .providers import NewsRow, ProviderError, get_provider, provider_names
 from .schema_utils import NEWS_SCHEMA
 
+#: Composed example: two ``news_search`` calls joined on ``domain`` to find the
+#: outlets covering BOTH topics. Defined once and referenced by the function's
+#: FunctionExample list, its ``vgi.example_queries`` tag, and the schema-level list.
+COMPOSED_OVERLAP_EXAMPLE = {
+    "description": (
+        "Find the outlets covering both 'climate' and 'election': join the 100 most recent "
+        "past-day articles of two news_search calls on domain and rank domains by combined "
+        "article count (page_size := 100 keeps each search to one GDELT request)."
+    ),
+    "sql": (
+        "WITH climate AS (SELECT domain, count(*) AS climate_articles "
+        "FROM news.main.news_search('climate', count := 100, page_size := 100, timespan := '1d') "
+        "GROUP BY domain), "
+        "election AS (SELECT domain, count(*) AS election_articles "
+        "FROM news.main.news_search('election', count := 100, page_size := 100, timespan := '1d') "
+        "GROUP BY domain) "
+        "SELECT domain, climate_articles, election_articles "
+        "FROM climate JOIN election USING (domain) "
+        "ORDER BY climate_articles + election_articles DESC, domain LIMIT 10"
+    ),
+}
+
 #: Secret type for the NewsAPI key (resolved via the secret provider).
 NEWSAPI_SECRET_TYPE = "newsapi"
 
@@ -166,12 +188,12 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "## When to use\n\n"
                 "- Find which outlets/domains are covering a topic right now.\n"
                 "- Pull recent headlines with their URLs and publish times for a feed or digest.\n"
-                "- Measure coverage volume or sentiment (`tone`) over a look-back window.\n"
+                "- Measure coverage volume over a look-back window, per domain or source country.\n"
                 "- Filter coverage by source country or language.\n\n"
                 "## Inputs\n\n"
                 "- `query` (positional, required): the free-text search string.\n"
-                "- `provider :=` (default `'gdelt'`): `'gdelt'` (free, no key, worldwide, includes "
-                "sentiment `tone`) or `'newsapi'` (requires a `TYPE newsapi` DuckDB secret).\n"
+                "- `provider :=` (default `'gdelt'`): `'gdelt'` (free, no key, worldwide) or "
+                "`'newsapi'` (requires a `TYPE newsapi` DuckDB secret).\n"
                 "- `count :=` (default 25): total maximum rows across all internally-paged requests.\n"
                 "- `timespan :=` (default `'1d'`): look-back window such as `'6h'`, `'1d'`, `'2w'`.\n"
                 "- `country :=` / `language :=`: optional provider-mapped filters (empty = no filter).\n"
@@ -179,7 +201,8 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "## Outputs\n\n"
                 "One row per article over `title, url, domain, language, seendate, country, tone, "
                 "source, extra`. `seendate` is a real `TIMESTAMP WITH TIME ZONE`; `tone` is a `DOUBLE` "
-                "sentiment score (GDELT only, NULL otherwise); `extra` carries provider-specific "
+                "sentiment slot that is currently always NULL (GDELT's article list carries no per-article "
+                "tone and NewsAPI has no sentiment); `extra` carries provider-specific "
                 "fields as a JSON string.\n\n"
                 "## Behavior & edge cases\n\n"
                 "- Results are paginated transparently across `process()` ticks: GDELT pages by time "
@@ -196,11 +219,11 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                 "single unified column set for every provider.\n\n"
                 "## Overview\n\n"
                 "Pass a free-text `query` and get back recent articles with their headline, URL, "
-                "publisher domain, language, publish time, source country, sentiment tone, the "
+                "publisher domain, language, publish time, source country, a (currently NULL) sentiment tone, the "
                 "originating provider, and a JSON `extra` blob of provider-specific fields. "
                 "Runnable queries are attached as this function's example queries.\n\n"
                 "## Notes\n\n"
-                "- Default provider is **GDELT** (free, no API key, includes `tone`).\n"
+                "- Default provider is **GDELT** (free, no API key).\n"
                 "- **NewsAPI** requires a `TYPE newsapi` DuckDB secret holding an `api_key`; never "
                 "inline a key in SQL.\n"
                 "- `count` caps total rows; `page_size` controls the per-request fetch size.\n"
@@ -237,7 +260,10 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                     {
                         "name": "tone",
                         "type": "DOUBLE",
-                        "description": "Sentiment tone (GDELT only; NULL for providers without sentiment).",
+                        "description": (
+                            "Sentiment tone; currently always NULL (GDELT's article list carries no "
+                            "per-article tone, NewsAPI has no sentiment)."
+                        ),
                     },
                     {
                         "name": "source",
@@ -267,6 +293,7 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                         "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
                         "GROUP BY domain ORDER BY articles DESC",
                     },
+                    COMPOSED_OVERLAP_EXAMPLE,
                     {
                         "description": "NewsAPI search (requires a TYPE newsapi secret with an api_key).",
                         "sql": "SELECT title, source "
@@ -289,6 +316,10 @@ class NewsSearch(TableFunctionGenerator[NewsSearchArgs, NewsScanState]):
                     "GROUP BY domain ORDER BY articles DESC"
                 ),
                 description="Count how many domains are covering 'elections' over the last two days",
+            ),
+            FunctionExample(
+                sql=COMPOSED_OVERLAP_EXAMPLE["sql"],
+                description=COMPOSED_OVERLAP_EXAMPLE["description"],
             ),
             FunctionExample(
                 sql=(

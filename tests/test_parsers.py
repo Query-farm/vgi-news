@@ -119,3 +119,21 @@ def test_newsapi_null_author_omitted_from_extra():
 def test_newsapi_error_payload_raises():
     with pytest.raises(ProviderError, match="invalid"):
         newsapi.map_response(_load("newsapi_error.json"))
+
+
+@pytest.mark.parametrize(
+    ("timespan", "expected"),
+    [
+        ("1d", datetime(2024, 6, 14, 12, 0, 0, tzinfo=UTC)),
+        ("6h", datetime(2024, 6, 15, 6, 0, 0, tzinfo=UTC)),
+        ("2w", datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC)),
+        ("15min", datetime(2024, 6, 15, 11, 45, 0, tzinfo=UTC)),
+        ("1m", datetime(2024, 5, 16, 12, 0, 0, tzinfo=UTC)),  # GDELT "m" = months
+        ("1y", datetime(2024, 3, 17, 12, 0, 0, tzinfo=UTC)),  # unknown unit -> ~3 months
+        ("12m", datetime(2024, 3, 17, 12, 0, 0, tzinfo=UTC)),  # capped at ~3 months
+    ],
+)
+def test_gdelt_timespan_start(timespan, expected):
+    """Older-window requests need a startdatetime: the start of the timespan look-back."""
+    now = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
+    assert gdelt.timespan_start(timespan, now) == expected

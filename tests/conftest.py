@@ -42,9 +42,12 @@ class _Handler(BaseHTTPRequestHandler):
             return
         query = parse_qs(parsed.query)
         status, payload = handler(query)
-        body = json.dumps(payload).encode()
+        # A ``bytes`` payload is sent verbatim as text (GDELT answers some bad
+        # requests with a 200 plain-text message rather than JSON).
+        raw = isinstance(payload, bytes)
+        body = payload if raw else json.dumps(payload).encode()
         self.send_response(status)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type", "text/plain" if raw else "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -84,6 +87,10 @@ def mock_gdelt() -> Iterator[str]:
 
     def route(query: dict[str, list[str]]) -> tuple[int, Any]:
         if query.get("enddatetime"):
+            # Like the real DOC API: an end without a start is rejected with a
+            # 200 plain-text message.
+            if not query.get("startdatetime"):
+                return 200, b"Query has end date with no start date."
             return 200, older
         return 200, fixture
 

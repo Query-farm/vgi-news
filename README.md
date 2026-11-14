@@ -37,7 +37,7 @@ ATTACH 'news' AS news (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Que
 SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider;
 
 -- Fetch the 10 most recent headlines mentioning 'climate summit'.
-SELECT title, url, seendate, tone FROM news.main.news_search('climate summit', count := 10);
+SELECT title, url, domain, seendate FROM news.main.news_search('climate summit', count := 10);
 ```
 
 GDELT, the default provider, needs no key; queries do need network access. NewsAPI needs a `newsapi` secret, created after the ATTACH: see [Authentication (NewsAPI)](#authentication-newsapi).
@@ -108,7 +108,7 @@ Every provider maps onto exactly these columns (missing fields → `NULL`):
 | `language` | VARCHAR | provider-reported language (codes vary) |
 | `seendate` | TIMESTAMPTZ | first-seen / published instant (UTC); `NULL` if unknown |
 | `country` | VARCHAR | source country (provider's coding) |
-| `tone` | DOUBLE | GDELT sentiment; **`NULL`** for providers without sentiment |
+| `tone` | DOUBLE | sentiment slot; currently always **`NULL`** (see below) |
 | `source` | VARCHAR | the provider that produced the row |
 | `extra` | VARCHAR (JSON) | provider-specific fields, JSON-encoded |
 
@@ -121,6 +121,29 @@ FROM news.news_search('elections', count := 50, timespan := '2d')
 WHERE seendate > now() - INTERVAL 12 HOUR
 ORDER BY seendate DESC;
 ```
+
+Because every call returns the same columns, searches compose. Join two
+`news_search` calls on `domain` to find the outlets covering **both** topics:
+
+```sql
+WITH climate AS (
+  SELECT domain, count(*) AS climate_articles
+  FROM news.main.news_search('climate', count := 100, page_size := 100, timespan := '1d')
+  GROUP BY domain
+), election AS (
+  SELECT domain, count(*) AS election_articles
+  FROM news.main.news_search('election', count := 100, page_size := 100, timespan := '1d')
+  GROUP BY domain
+)
+SELECT domain, climate_articles, election_articles
+FROM climate JOIN election USING (domain)
+ORDER BY climate_articles + election_articles DESC, domain
+LIMIT 10;
+```
+
+(`page_size := 100` keeps each search to one GDELT request. GDELT allows about
+one request every five seconds, so the second search may wait on the worker's
+429 back-off.)
 
 ### A note on `tone`
 
@@ -140,9 +163,12 @@ paginates across `process()` calls, carrying a small **serializable cursor**
   articles per request (the API caps this at **250**) and offers **no deep
   cursor**. To go further back you must fetch the newest window, then request an
   **older** window ending just before the oldest article you already saw. We
-  sort `DateDesc` and carry the **oldest `seendate`** of each page as the next
-  window's `enddatetime`. This is approximate at window edges (articles sharing
-  a second can straddle the boundary) and cannot exceed GDELT's own
+  sort `DateDesc` and end the next window (`enddatetime`, with a matching
+  `startdatetime` at the start of your `timespan`) just **before the oldest
+  `seendate`** of each page. This is approximate at window edges: GDELT stamps
+  articles with their 15-minute update and matches up to one update past the
+  end, so articles sharing the boundary update beyond a full page are skipped
+  rather than repeated. It also cannot exceed GDELT's own
   retention/rate limits — but it is the only honest way past one `maxrecords`
   page. GDELT also rate-limits to roughly **one request every 5 seconds**.
 - **NewsAPI pages by PAGE NUMBER** (`page` / `pageSize`) — the simple kind.

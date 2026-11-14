@@ -10,10 +10,17 @@ The DOC API returns at most ``maxrecords`` articles per request (the API caps
 this at 250) and does **not** offer a deep cursor. To go further back you must
 *page by time window*: fetch the newest window, then request an **older** window
 ending just before the oldest article you already saw. We sort ``DateDesc`` and
-carry the oldest ``seendate`` of each page as the next window's end
-(``&enddatetime=...``). This is approximate at window edges (articles sharing a
-second can straddle the boundary) and cannot exceed GDELT's own retention/rate
-limits, but it is the only honest way to fetch beyond one ``maxrecords`` page.
+end the next window just far enough before the oldest ``seendate`` of each page
+to exclude it (``&enddatetime=...``; GDELT matches up to one 15-minute update
+past the end, so ending AT that ``seendate`` re-fetches the same articles).
+GDELT rejects an ``enddatetime`` without a matching ``startdatetime`` ("Query
+has end date with no start date."), so every older-window request also pins
+``startdatetime`` to the start of the caller's ``timespan`` look-back.
+
+This is approximate at window edges: ``seendate`` values are 15-minute update
+stamps, so articles sharing the boundary update beyond a full page are skipped
+(never repeated). It also cannot exceed GDELT's own retention/rate limits, but
+it is the only honest way to fetch beyond one ``maxrecords`` page.
 
 Tone
 ----
@@ -26,7 +33,8 @@ it; otherwise it stays ``NULL`` — exactly the "missing field -> NULL" contract
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+import re
+from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 
 from .base import NewsRow, PageResult, Provider, ProviderError, http_get_json
@@ -38,6 +46,54 @@ _MAX_RECORDS = 250  # GDELT DOC API hard cap.
 _SEENDATE_FMT = "%Y%m%dT%H%M%SZ"
 # enddatetime / startdatetime format, e.g. "20240615123000".
 _GDELT_DT_FMT = "%Y%m%d%H%M%S"
+# GDELT's update cadence: seendates are 15-minute update stamps, and an
+# enddatetime matches articles up to one bucket after it (see ``search``).
+_SEENDATE_BUCKET = timedelta(minutes=15)
+
+
+# GDELT ``timespan`` units -> timedelta factory. "m"/"months" is GDELT's month
+# unit (minutes are "min"); a month is taken as 30 days.
+_TIMESPAN_RE = re.compile(r"^\s*(\d+)\s*([a-z]+)\s*$", re.IGNORECASE)
+_TIMESPAN_UNITS: dict[str, timedelta] = {
+    "min": timedelta(minutes=1),
+    "mins": timedelta(minutes=1),
+    "minute": timedelta(minutes=1),
+    "minutes": timedelta(minutes=1),
+    "h": timedelta(hours=1),
+    "hour": timedelta(hours=1),
+    "hours": timedelta(hours=1),
+    "d": timedelta(days=1),
+    "day": timedelta(days=1),
+    "days": timedelta(days=1),
+    "w": timedelta(weeks=1),
+    "week": timedelta(weeks=1),
+    "weeks": timedelta(weeks=1),
+    "m": timedelta(days=30),
+    "month": timedelta(days=30),
+    "months": timedelta(days=30),
+}
+# The DOC API only searches roughly the last three months.
+_MAX_LOOKBACK = timedelta(days=90)
+
+
+def timespan_start(timespan: str, now: datetime) -> datetime:
+    """Return the start instant of a GDELT ``timespan`` look-back ending at ``now``.
+
+    Unparseable values fall back to GDELT's full ~3-month search range (the first
+    page, which sends ``timespan`` verbatim, is where GDELT itself rejects a bad
+    value).
+
+    Args:
+        timespan: A GDELT timespan such as ``'6h'``, ``'1d'``, ``'2w'``, ``'15min'``.
+        now: The instant the look-back ends at (timezone-aware).
+
+    Returns:
+        ``now`` minus the timespan, never earlier than ``now`` minus ~3 months.
+    """
+    match = _TIMESPAN_RE.match(timespan or "")
+    unit = _TIMESPAN_UNITS.get(match.group(2).lower()) if match else None
+    span = unit * int(match.group(1)) if match and unit is not None else _MAX_LOOKBACK
+    return now - min(span, _MAX_LOOKBACK)
 
 
 def parse_seendate(value: str | None) -> datetime | None:
@@ -133,6 +189,9 @@ class GDELTProvider(Provider):
         # Window paging: an explicit older window-end takes precedence over the
         # relative timespan once we are past the first page.
         if window_end is not None:
+            # GDELT requires a start whenever an end is given; pin it to the
+            # caller's look-back so later windows stay inside ``timespan``.
+            params["startdatetime"] = timespan_start(timespan, datetime.now(UTC)).strftime(_GDELT_DT_FMT)
             params["enddatetime"] = window_end.astimezone(UTC).strftime(_GDELT_DT_FMT)
         else:
             params["timespan"] = timespan
@@ -142,12 +201,17 @@ class GDELTProvider(Provider):
             raise ProviderError("GDELT response was not a JSON object")
         rows = map_response(payload)
 
-        # Next window ends at the oldest seendate on this page. If a page is
-        # short (fewer than maxrecords) there is nothing older worth fetching.
+        # Next window must EXCLUDE the oldest seendate on this page. GDELT stamps
+        # articles with the 15-minute update they arrived in, and an enddatetime
+        # E still matches seendate S while S <= E + 15min (measured live: end
+        # 17:59:59 and 17:45:00 both return 18:00:00 articles, 17:44:59 does
+        # not). Ending at the oldest seendate itself re-fetched the same page and
+        # the scan returned every article several times. If a page is short
+        # (fewer than maxrecords) there is nothing older worth fetching.
         next_window_end: datetime | None = None
         if len(rows) >= params["maxrecords"]:
             seendates = [r.seendate for r in rows if r.seendate is not None]
             if seendates:
-                next_window_end = min(seendates)
+                next_window_end = min(seendates) - _SEENDATE_BUCKET - timedelta(seconds=1)
 
         return PageResult(rows=rows, next_window_end=next_window_end, next_page=None)

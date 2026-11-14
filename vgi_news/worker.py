@@ -31,17 +31,17 @@ from vgi import Worker
 from vgi.catalog import Catalog, ConstraintInfo, Schema, Table, constraint_record
 
 from vgi_news.discovery import NewsProviders
-from vgi_news.tables import NEWSAPI_SECRET_SPEC, TABLE_FUNCTIONS
+from vgi_news.tables import COMPOSED_OVERLAP_EXAMPLE, NEWSAPI_SECRET_SPEC, TABLE_FUNCTIONS
 
 _CATALOG_DESCRIPTION_LLM = (
     "Search global news coverage from SQL. The news_search table function queries worldwide news "
     "articles by free-text query and returns a unified schema (title, url, domain, language, "
     "seendate, country, tone, source, extra), with a look-back window, optional country/language "
     "filters, and row-count paging. GDELT is the default provider (free, no API key, worldwide "
-    "monitoring of online news with sentiment 'tone'); NewsAPI is available with a key supplied via "
+    "monitoring of online news); NewsAPI is available with a key supplied via "
     "a DuckDB secret. The news_providers table function lists the available providers and whether "
     "each needs a key. Use this worker to find, filter, and analyze recent news articles in SQL "
-    "(who is covering a topic, from which domains/countries, how recently, and at what sentiment)."
+    "(who is covering a topic, from which domains/countries, and how recently)."
 )
 
 _CATALOG_DESCRIPTION_MD = (
@@ -50,7 +50,7 @@ _CATALOG_DESCRIPTION_MD = (
     "Query worldwide news coverage by free text and get one unified article schema (`title, url, "
     "domain, language, seendate, country, tone, source, extra`) regardless of provider, with a "
     "look-back window, optional country/language filters, and row-count paging.\n\n"
-    "**Providers**: `gdelt` (default, free, no key, worldwide with sentiment tone) and `newsapi` "
+    "**Providers**: `gdelt` (default, free, no key, worldwide) and `newsapi` "
     "(requires a `TYPE newsapi` secret with an `api_key`). The provider list and each provider's "
     "key requirement are queryable from SQL."
 )
@@ -60,8 +60,8 @@ _SCHEMA_DESCRIPTION_LLM = (
     "The single schema of the news worker: free-text search over worldwide news articles, returning "
     "a unified article schema (`title, url, domain, language, seendate, country, tone, source, "
     "extra`) whatever the provider. Discover the valid `provider :=` values and whether each needs "
-    "an API key first, then search and filter coverage. GDELT is the default (free, no key, "
-    "includes sentiment `tone`); NewsAPI requires a `TYPE newsapi` secret."
+    "an API key first, then search and filter coverage. GDELT is the default (free, no key); "
+    "NewsAPI requires a `TYPE newsapi` secret."
 )
 
 _SCHEMA_DESCRIPTION_MD = (
@@ -226,7 +226,7 @@ _NEWS_CATALOG = Catalog(
                         },
                         {
                             "description": "Fetch the 10 most recent headlines mentioning 'climate summit'.",
-                            "sql": "SELECT title, url, seendate, tone "
+                            "sql": "SELECT title, url, domain, seendate "
                             "FROM news.main.news_search('climate summit', count := 10)",
                         },
                         {
@@ -236,6 +236,7 @@ _NEWS_CATALOG = Catalog(
                             "FROM news.main.news_search('elections', timespan := '2d', count := 50) "
                             "GROUP BY domain ORDER BY articles DESC",
                         },
+                        COMPOSED_OVERLAP_EXAMPLE,
                     ]
                 ),
             },

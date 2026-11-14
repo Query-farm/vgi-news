@@ -38,7 +38,9 @@ upstream page per tick and advances the cursor:
 
 - **GDELT pages by time window.** The DOC API caps a response at `maxrecords`
   (≤250) and has **no deep cursor**. We sort `DateDesc` and carry the oldest
-  `seendate` as the next window's `enddatetime`. Honest caveats (window-edge
+  `seendate` minus 15m01s as the next window's `enddatetime` (GDELT matches
+  one 15-minute update past the end; ending AT it duplicated the page) plus a `startdatetime` at the
+  start of `timespan` (GDELT rejects an end without a start). Honest caveats (window-edge
   approximation, ~1 req/5s rate limit) are documented in `gdelt.py` and the
   README — keep them honest.
 - **NewsAPI pages by page number** (`page`/`pageSize`).

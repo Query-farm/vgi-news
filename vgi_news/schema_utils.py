@@ -57,7 +57,8 @@ NEWS_SCHEMA: pa.Schema = pa.schema(
         field(
             "tone",
             pa.float64(),
-            "Sentiment tone (GDELT only; NULL for providers without sentiment).",
+            "Sentiment tone; currently always NULL (GDELT's article list carries no per-article tone, "
+            "NewsAPI has no sentiment).",
             nullable=True,
         ),
         field("source", pa.string(), "Provider that produced this row (e.g. 'gdelt', 'newsapi').", nullable=False),

@@ -48,7 +48,9 @@ def test_gdelt_window_paging_cursor(mock_gdelt):
         api_key=None,
     )
     # oldest dated row is 2024-06-15T09:00:00Z (the no-date row is ignored).
-    assert page.next_window_end == datetime(2024, 6, 15, 9, 0, 0, tzinfo=UTC)
+    # 15m01s earlier: GDELT matches one 15-minute update past enddatetime, so
+    # ending AT the oldest seendate would re-fetch (duplicate) the same page.
+    assert page.next_window_end == datetime(2024, 6, 15, 8, 44, 59, tzinfo=UTC)
 
     # Fetching the next window returns the older article and then terminates.
     page2 = provider.search(
@@ -178,3 +180,34 @@ def test_http_get_json_5xx_keeps_the_fast_backoff():
         assert slept == [0.5], f"5xx backoff should stay fast, got {slept}"
     finally:
         server.shutdown()
+
+
+def test_gdelt_older_window_sends_start_and_end():
+    """GDELT rejects ``enddatetime`` without ``startdatetime`` ("Query has end date
+    with no start date."), so an older-window request must carry both."""
+    seen: list[dict[str, list[str]]] = []
+
+    def route(query):
+        seen.append(query)
+        return 200, {"articles": []}
+
+    server, base = make_server({"/doc": route})
+    try:
+        provider = get_provider("gdelt", base_url=f"{base}/doc")
+        provider.search(
+            "climate",
+            count=5,
+            timespan="2d",
+            window_end=datetime(2099, 1, 1, 0, 0, 0, tzinfo=UTC),
+            page=None,
+            country=None,
+            language=None,
+            api_key=None,
+        )
+    finally:
+        server.shutdown()
+    (query,) = seen
+    assert query["enddatetime"] == ["20990101000000"]
+    assert "timespan" not in query
+    start = datetime.strptime(query["startdatetime"][0], "%Y%m%d%H%M%S").replace(tzinfo=UTC)
+    assert abs((datetime.now(UTC) - start).total_seconds() - 2 * 86400) < 120

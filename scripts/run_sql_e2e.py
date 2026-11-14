@@ -88,6 +88,15 @@ class _Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)
         if parsed.path == "/doc":  # GDELT
+            if query.get("enddatetime") and not query.get("startdatetime"):
+                # The real DOC API rejects an end without a start (200 + plain text).
+                body = b"Query has end date with no start date."
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             self._send(200, _GDELT_PAGE_2 if query.get("enddatetime") else _GDELT_PAGE_1)
         elif parsed.path == "/everything":  # NewsAPI
             # No key configured in the SQL suite -> exercise the clean error path.
