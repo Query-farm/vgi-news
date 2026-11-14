@@ -249,3 +249,7 @@ Written by [Query.Farm](https://query.farm).
 
 Copyright 2026 Query Farm LLC - https://query.farm
 
+
+## Executed notebook
+
+[Compare capped source mix](notebooks/README.md) uses a recorded public GDELT response to measure how a result cap changes exact-URL and domain coverage, with explicit live mode.

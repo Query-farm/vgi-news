@@ -1,0 +1,8 @@
+{
+  "url": "https://api.gdeltproject.org/api/v2/doc/doc?query=climate&mode=ArtList&format=json&maxrecords=100&sort=DateDesc&timespan=1d",
+  "response_received_utc": "2026-11-14T09:04:19.644329+00:00",
+  "http_status": 200,
+  "articles": 84,
+  "sha256": "b1c13ec0d9b406a8c8af75112b9481ebaf6798636b5ff53ae77fbcd889dfc14f",
+  "capture": "Public HTTP response forwarded unchanged to actual VGI worker through supported base URL hook"
+}
