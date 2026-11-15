@@ -1,0 +1,19 @@
+{
+  "release_revision": "24fd6584ee75ea9d4c40e978ed35d6a3a25185ad",
+  "current_revision": "d90f8a7407011eee8846ac2dad77b86d7e1ec01b",
+  "reviewed_at": "2026-11-15T01:06:00.001688+00:00",
+  "reviewer": "Codex /root",
+  "registration": "Sole main schema: TABLE_FUNCTIONS contains NewsSearch; functions adds NewsProviders; one same-named NewsProviders physical table alias. No views, COPY, writes or omitted credential-dependent APIs. NewsAPI authentication is an optional branch of news_search, included in denominator.",
+  "compatibility": "Signatures, registrations, returned column types and runtime dependencies unchanged. Material runtime change in GDELT older-window pagination: current subtracts15minutes+1second from next window end and supplies startdatetime; release does neither. Current also corrects tone docs and adds composed examples. Reviewed correspondence applies ONLY to the shown single first-page GDELT call (count<=100,page_size100) and offline registry. No equality claimed for paging, and current runtime was not executed.",
+  "source_sha256": {
+    "vgi_news/__init__.py": "3a7c55ebd542e53e562c3b2cae55719117065cf77957dacd889fa61e53a08d13",
+    "vgi_news/discovery.py": "d1ab4a6ed7132c243e5ab78f743bdbac0dc9b5fc2448efabcf43792e194b337b",
+    "vgi_news/providers/__init__.py": "cc0350ac155224d1320e87a0902d793402432c2ccb681e0fc41e033c7301d883",
+    "vgi_news/providers/base.py": "39cbbe897c688c1456adb449a14936f125116f031555a398a83fa4585e126dd5",
+    "vgi_news/providers/gdelt.py": "f8b0c117fd10192790c9540f69c48bd07d6176c374000bf992b91b360a4747d9",
+    "vgi_news/providers/newsapi.py": "28bd45025cc3addbaa1a92db39c7ae8370b0b0454b1932e808c25e5aaaff486a",
+    "vgi_news/schema_utils.py": "9afd944c84b70de3193d09b6c9bd658406b40b85fc84fb9a18fff2325df081a1",
+    "vgi_news/tables.py": "07db489efc2333e5690b60243df880dfc012e3b34adbe1730226918babc7ffad",
+    "vgi_news/worker.py": "009d3f8cbaed6e8f44569e15b51def402878a857cb15e1c6278690759b83da63"
+  }
+}

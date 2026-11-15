@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-release.json",
+      "sha256": "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:07:32.468681+00:00",
+        "catalog_sha256": "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941",
+        "notes": "Complete2logical public names, two functions and one same-named provider table alias. NewsAPI branch remains included. Actual release exports reconciled; current registration source-reviewed. Current older-window GDELT pagination differs materially; example compatibility approved only for offline registry and bounded first-page GDELT call. No exact current runtime execution claimed."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "563d782001d2f724c66e8466b459509d8e0524598f76b03584cce6c707e85ee1",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:07:32.468681+00:00",
+        "catalog_sha256": "563d782001d2f724c66e8466b459509d8e0524598f76b03584cce6c707e85ee1",
+        "notes": "Complete2logical public names, two functions and one same-named provider table alias. NewsAPI branch remains included. Actual release exports reconciled; current registration source-reviewed. Current older-window GDELT pagination differs materially; example compatibility approved only for offline registry and bounded first-page GDELT call. No exact current runtime execution claimed."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_compare_capped_source_mix.ipynb",
+      "sha256": "0f288e1c32339733faa5b0f44936ed298d6703e828da9d31ec9fcfdf2cd2ee98",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "3bc503c3683bfc8388094ce0ffadaec9123573d9dccc2e1b5f1d9ad388ba3881"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "news_providers"
+      },
+      "notebook": "01_compare_capped_source_mix.ipynb",
+      "sql": [
+        {
+          "cell": "provider-query",
+          "reference": "news.main.news_providers"
+        }
+      ],
+      "narrative_cells": [
+        "provider-story"
+      ],
+      "result_cells": [
+        "provider-finding"
+      ],
+      "interpretation_cells": [
+        "provider-finding"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:07:32.468681+00:00",
+        "notebook_sha256": "0f288e1c32339733faa5b0f44936ed298d6703e828da9d31ec9fcfdf2cd2ee98",
+        "catalog_sha256": [
+          "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941",
+          "563d782001d2f724c66e8466b459509d8e0524598f76b03584cce6c707e85ee1"
+        ],
+        "purpose": "Gate provider selection on advertised key requirements before searching.",
+        "finding": "Two providers; GDELT requires no key, NewsAPI requires one. SQL result is used in an asserted selected-provider gate; registry is not a live health or usage-rights check."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "news_search"
+      },
+      "notebook": "01_compare_capped_source_mix.ipynb",
+      "sql": [
+        {
+          "cell": "search-materialize",
+          "reference": "news.main.news_search"
+        }
+      ],
+      "narrative_cells": [
+        "search-story",
+        "46f7129d",
+        "94d4f19b",
+        "a2b337dd"
+      ],
+      "result_cells": [
+        "search-materialize",
+        "bfe66260",
+        "51cb8cca",
+        "3e9b5e01"
+      ],
+      "interpretation_cells": [
+        "850e5b04",
+        "cffdbe1b"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-15T01:07:32.468681+00:00",
+        "notebook_sha256": "0f288e1c32339733faa5b0f44936ed298d6703e828da9d31ec9fcfdf2cd2ee98",
+        "catalog_sha256": [
+          "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941",
+          "563d782001d2f724c66e8466b459509d8e0524598f76b03584cce6c707e85ee1"
+        ],
+        "purpose": "Measure how a cap on one recorded response changes exact-URL/domain coverage without pretending it is a census.",
+        "finding": "20\u219250 raw rows retain20\u219250uniqueURLs,16\u219242domains;top-five share45%\u219226%. One request each; fixed84row response and tied index timestamps. No sentiment, independence, world coverage or trend inferred."
+      }
+    }
+  ]
+}

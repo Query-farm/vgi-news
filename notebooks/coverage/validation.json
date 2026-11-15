@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "status": "met",
+  "meets_target": true,
+  "catalogs": {
+    "released": {
+      "catalog_status": "verified",
+      "revision": "24fd6584ee75ea9d4c40e978ed35d6a3a25185ad",
+      "catalog_sha256": "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941",
+      "collection_reconciled": true,
+      "denominator": 2,
+      "observed_objects": 2,
+      "required": 2,
+      "verified_count": 2,
+      "candidate_count": 0,
+      "fraction": 1.0,
+      "meets_target": true,
+      "exact_runtime_count": 2,
+      "runtime_revisions": [
+        "24fd6584ee75ea9d4c40e978ed35d6a3a25185ad"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_providers"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_search"
+        }
+      ],
+      "uncovered": [],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_providers",
+          "kinds": [
+            "function",
+            "table"
+          ],
+          "signatures": [
+            "CREATE TABLE news_providers(provider VARCHAR, requires_key BOOLEAN NOT NULL, PRIMARY KEY(provider));",
+            "table() -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_search",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "table(VARCHAR, VARCHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "optional"
+          ]
+        }
+      ],
+      "issues": []
+    },
+    "current": {
+      "catalog_status": "verified",
+      "revision": "d90f8a7407011eee8846ac2dad77b86d7e1ec01b",
+      "catalog_sha256": "563d782001d2f724c66e8466b459509d8e0524598f76b03584cce6c707e85ee1",
+      "collection_reconciled": false,
+      "denominator": 2,
+      "observed_objects": 2,
+      "required": 2,
+      "verified_count": 2,
+      "candidate_count": 0,
+      "fraction": 1.0,
+      "meets_target": true,
+      "exact_runtime_count": 0,
+      "runtime_revisions": [
+        "24fd6584ee75ea9d4c40e978ed35d6a3a25185ad"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_providers"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_search"
+        }
+      ],
+      "uncovered": [],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_providers",
+          "kinds": [
+            "function",
+            "table"
+          ],
+          "signatures": [
+            "CREATE TABLE news_providers(provider VARCHAR, requires_key BOOLEAN NOT NULL, PRIMARY KEY(provider));",
+            "table() -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "news_search",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "table(VARCHAR, VARCHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "optional"
+          ]
+        }
+      ],
+      "issues": []
+    }
+  },
+  "interface_drift": {
+    "known": true,
+    "current_only": [],
+    "released_only": [],
+    "changed": []
+  },
+  "notebooks": {
+    "01_compare_capped_source_mix.ipynb": {
+      "verified": true,
+      "issues": []
+    }
+  },
+  "examples": [
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "news_providers"
+      },
+      "notebook": "01_compare_capped_source_mix.ipynb",
+      "runtime_revision": "24fd6584ee75ea9d4c40e978ed35d6a3a25185ad",
+      "runtime_catalog_sha256": "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "news_search"
+      },
+      "notebook": "01_compare_capped_source_mix.ipynb",
+      "runtime_revision": "24fd6584ee75ea9d4c40e978ed35d6a3a25185ad",
+      "runtime_catalog_sha256": "718b6b52dab03a5905614b55b25667f3a4dd9d993682df4a18e5893b82fcc941"
+    }
+  ],
+  "issues": []
+}

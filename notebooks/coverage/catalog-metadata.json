@@ -1,0 +1,45 @@
+{
+  "query": "SELECT * FROM duckdb_databases() WHERE database_name='news'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "path",
+    "comment",
+    "tags",
+    "internal",
+    "type",
+    "readonly",
+    "encrypted",
+    "cipher",
+    "options"
+  ],
+  "rows": [
+    [
+      "news",
+      22595,
+      null,
+      "Global news search (GDELT by default; NewsAPI with a key) for SQL.",
+      {
+        "vgi.agent_test_tasks": "[{\"name\": \"list_providers\", \"prompt\": \"List every news provider this worker supports and whether each one requires an API key.\"}, {\"name\": \"count_providers\", \"prompt\": \"How many news providers can I search?\"}, {\"name\": \"keyless_providers\", \"prompt\": \"Which news providers can I use for free, without supplying an API key?\"}, {\"name\": \"search_returns_articles\", \"prompt\": \"Search recent worldwide news coverage of 'climate' with the default provider and confirm at least one article comes back.\"}]",
+        "vgi.author": "Query.Farm",
+        "vgi.copyright": "Copyright 2026 Query Farm LLC - https://query.farm",
+        "vgi.doc_llm": "Search global news coverage from SQL. The news_search table function queries worldwide news articles by free-text query and returns a unified schema (title, url, domain, language, seendate, country, tone, source, extra), with a look-back window, optional country/language filters, and row-count paging. GDELT is the default provider (free, no API key, worldwide monitoring of online news with sentiment 'tone'); NewsAPI is available with a key supplied via a DuckDB secret. The news_providers table function lists the available providers and whether each needs a key. Use this worker to find, filter, and analyze recent news articles in SQL (who is covering a topic, from which domains/countries, how recently, and at what sentiment).",
+        "vgi.doc_md": "# news\n\nGlobal news search as a DuckDB/SQL VGI worker.\n\nQuery worldwide news coverage by free text and get one unified article schema (`title, url, domain, language, seendate, country, tone, source, extra`) regardless of provider, with a look-back window, optional country/language filters, and row-count paging.\n\n**Providers**: `gdelt` (default, free, no key, worldwide with sentiment tone) and `newsapi` (requires a `TYPE newsapi` secret with an `api_key`). The provider list and each provider's key requirement are queryable from SQL.",
+        "vgi.keywords": "[\"news\", \"news search\", \"articles\", \"headlines\", \"gdelt\", \"newsapi\", \"journalism\", \"media\", \"coverage\", \"press\", \"current events\", \"sentiment\", \"tone\", \"world news\", \"current affairs\"]",
+        "vgi.license": "MIT",
+        "vgi.subtitle": "Search worldwide news articles from SQL via GDELT (free) or NewsAPI (with a key).",
+        "vgi.support_contact": "https://github.com/Query-farm/vgi-news/issues",
+        "vgi.support_policy_url": "https://github.com/Query-farm/vgi-news/blob/main/README.md",
+        "vgi.title": "Global News Search"
+      },
+      false,
+      "vgi",
+      false,
+      false,
+      null,
+      {
+        "location": "uvx --python 3.13 --from git+https://github.com/Query-farm/vgi-news@v0.4.0 vgi-news-worker"
+      }
+    ]
+  ]
+}

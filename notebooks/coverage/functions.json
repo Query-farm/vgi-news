@@ -1,0 +1,120 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='news' ORDER BY schema_name,function_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "news",
+      "22595",
+      "main",
+      "news_providers",
+      null,
+      "table",
+      "List available news providers and whether each requires an API key",
+      null,
+      {
+        "vgi.category": "discovery",
+        "vgi.doc_llm": "# news_providers\n\nIntrospection table function that lists every news provider this worker can route `news_search` to, and whether each one needs an API key. It contacts no external service, so it always runs offline \u2014 use it to discover valid `provider :=` values and to decide whether you must create a secret before searching.\n\n## When to use\n\n- Discover which providers are available (e.g. before picking `provider :=`).\n- Check whether a provider needs an API key (so you know to create a DuckDB secret first).\n- As a cheap, backend-free smoke test that the worker is attached and healthy.\n\n## Inputs\n\nNone \u2014 call it with empty parentheses: `news_providers()`.\n\n## Outputs\n\nOne row per provider with `provider` (the name to pass to `news_search`) and `requires_key` (whether an API key must be supplied via the secret provider). `gdelt` returns `false` (free, no key); `newsapi` returns `true`.",
+        "vgi.doc_md": "# News Providers\n\n`news_providers()` lists the news providers this worker supports and whether each requires an API key. It takes no arguments and makes no network calls.\n\n## Notes\n\n- `gdelt` is free and needs no key (`requires_key = false`); it is the default provider for `news_search`.\n- `newsapi` needs an API key (`requires_key = true`) supplied via a `TYPE newsapi` DuckDB secret.\n- This function is a safe, backend-free way to verify the worker is reachable.\n\nRunnable queries are attached as this object's example queries.",
+        "vgi.example_queries": "[{\"description\": \"List each provider and whether it requires an API key.\", \"sql\": \"SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider\"}, {\"description\": \"List only the free providers that need no API key.\", \"sql\": \"SELECT provider FROM news.main.news_providers() WHERE requires_key = false\"}]",
+        "vgi.keywords": "news providers, list providers, discovery, metadata, gdelt, newsapi, api key, requires key, introspection, capabilities, available sources",
+        "vgi.result_columns_schema": "[{\"name\": \"provider\", \"type\": \"VARCHAR\", \"description\": \"Provider name to pass as provider := '...' (e.g. gdelt, newsapi).\"}, {\"name\": \"requires_key\", \"type\": \"BOOLEAN\", \"description\": \"Whether the provider needs an API key supplied via the secret provider.\"}]",
+        "vgi.title": "List News Providers"
+      },
+      null,
+      [],
+      [],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22599,
+      [
+        "SELECT provider, requires_key FROM news.main.news_providers() ORDER BY provider",
+        "SELECT provider FROM news.main.news_providers() WHERE requires_key = false"
+      ],
+      null,
+      [
+        "news",
+        "metadata"
+      ]
+    ],
+    [
+      "news",
+      "22595",
+      "main",
+      "news_search",
+      null,
+      "table",
+      "Search global news coverage (GDELT by default; NewsAPI with a key)",
+      null,
+      {
+        "vgi.category": "search",
+        "vgi.doc_llm": "# news_search\n\nSearch worldwide news coverage by free-text query and return a **unified article schema** regardless of which upstream provider served the rows. This is the worker's primary surface: use it whenever you need to find, filter, or analyze recent news articles directly from SQL.\n\n## When to use\n\n- Find which outlets/domains are covering a topic right now.\n- Pull recent headlines with their URLs and publish times for a feed or digest.\n- Measure coverage volume or sentiment (`tone`) over a look-back window.\n- Filter coverage by source country or language.\n\n## Inputs\n\n- `query` (positional, required): the free-text search string.\n- `provider :=` (default `'gdelt'`): `'gdelt'` (free, no key, worldwide, includes sentiment `tone`) or `'newsapi'` (requires a `TYPE newsapi` DuckDB secret).\n- `count :=` (default 25): total maximum rows across all internally-paged requests.\n- `timespan :=` (default `'1d'`): look-back window such as `'6h'`, `'1d'`, `'2w'`.\n- `country :=` / `language :=`: optional provider-mapped filters (empty = no filter).\n- `page_size :=` (default 50): rows fetched per upstream request / per scan tick.\n\n## Outputs\n\nOne row per article over `title, url, domain, language, seendate, country, tone, source, extra`. `seendate` is a real `TIMESTAMP WITH TIME ZONE`; `tone` is a `DOUBLE` sentiment score (GDELT only, NULL otherwise); `extra` carries provider-specific fields as a JSON string.\n\n## Behavior & edge cases\n\n- Results are paginated transparently across `process()` ticks: GDELT pages by time window (carrying the oldest `seendate` as the next window edge \u2014 a window-edge approximation, since GDELT has no deep cursor), NewsAPI pages by page number.\n- An empty/blank `query` raises a clean error; an unknown `provider` lists the known ones. Upstream HTTP failures (rate limits, 5xx) surface as a clean DuckDB error.\n- Missing provider fields map to `NULL`. GDELT is rate-limited (~1 request / 5s).",
+        "vgi.doc_md": "# News Article Search\n\n`news_search(query, provider := ..., count := ..., timespan := ..., country := ..., language := ..., page_size := ...)` searches global news coverage and returns a single unified column set for every provider.\n\n## Overview\n\nPass a free-text `query` and get back recent articles with their headline, URL, publisher domain, language, publish time, source country, sentiment tone, the originating provider, and a JSON `extra` blob of provider-specific fields. Runnable queries are attached as this function's example queries.\n\n## Notes\n\n- Default provider is **GDELT** (free, no API key, includes `tone`).\n- **NewsAPI** requires a `TYPE newsapi` DuckDB secret holding an `api_key`; never inline a key in SQL.\n- `count` caps total rows; `page_size` controls the per-request fetch size.\n- GDELT enforces a ~1 request / 5 seconds rate limit and has no deep cursor, so very large look-backs are approximated at window edges.",
+        "vgi.example_queries": "[{\"description\": \"Latest 10 GDELT articles mentioning 'election' from the past week.\", \"sql\": \"SELECT title, url, seendate FROM news.main.news_search('election', count := 10, timespan := '1w')\"}, {\"description\": \"Count how many domains are covering 'elections' over the last two days.\", \"sql\": \"SELECT domain, count(*) AS articles FROM news.main.news_search('elections', timespan := '2d', count := 50) GROUP BY domain ORDER BY articles DESC\"}, {\"description\": \"NewsAPI search (requires a TYPE newsapi secret with an api_key).\", \"sql\": \"SELECT title, source FROM news.main.news_search('elections', provider := 'newsapi', count := 20, timespan := '2d')\"}]",
+        "vgi.keywords": "news, news search, articles, headlines, gdelt, newsapi, journalism, media, coverage, press, current events, sentiment, tone, search, http, current affairs",
+        "vgi.result_columns_schema": "[{\"name\": \"title\", \"type\": \"VARCHAR\", \"description\": \"Article headline.\"}, {\"name\": \"url\", \"type\": \"VARCHAR\", \"description\": \"Canonical article URL.\"}, {\"name\": \"domain\", \"type\": \"VARCHAR\", \"description\": \"Publisher domain (e.g. bbc.co.uk).\"}, {\"name\": \"language\", \"type\": \"VARCHAR\", \"description\": \"Article language as reported by the provider (code scheme varies).\"}, {\"name\": \"seendate\", \"type\": \"TIMESTAMPTZ\", \"description\": \"When the article was first seen/published (UTC); NULL if unknown.\"}, {\"name\": \"country\", \"type\": \"VARCHAR\", \"description\": \"Source country as the provider reports it (FIPS/ISO code scheme).\"}, {\"name\": \"tone\", \"type\": \"DOUBLE\", \"description\": \"Sentiment tone (GDELT only; NULL for providers without sentiment).\"}, {\"name\": \"source\", \"type\": \"VARCHAR\", \"description\": \"Provider that produced this row (e.g. gdelt, newsapi).\"}, {\"name\": \"extra\", \"type\": \"VARCHAR\", \"description\": \"Provider-specific fields, JSON-encoded.\"}]",
+        "vgi.title": "Global News Article Search"
+      },
+      null,
+      [
+        "query",
+        "timespan",
+        "provider",
+        "page_size",
+        "country",
+        "language",
+        "count"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT",
+        "VARCHAR",
+        "VARCHAR",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22600,
+      [
+        "SELECT title, url, seendate FROM news.main.news_search('election', count := 10, timespan := '1w')",
+        "SELECT domain, count(*) AS articles FROM news.main.news_search('elections', timespan := '2d', count := 50) GROUP BY domain ORDER BY articles DESC",
+        "SELECT title, source FROM news.main.news_search('elections', provider := 'newsapi', count := 20, timespan := '2d')"
+      ],
+      null,
+      [
+        "news",
+        "search",
+        "http"
+      ]
+    ]
+  ]
+}

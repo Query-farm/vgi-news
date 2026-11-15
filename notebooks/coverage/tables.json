@@ -1,0 +1,51 @@
+{
+  "query": "SELECT * FROM duckdb_tables() WHERE database_name='news'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "schema_oid",
+    "table_name",
+    "table_oid",
+    "comment",
+    "tags",
+    "internal",
+    "temporary",
+    "has_primary_key",
+    "estimated_size",
+    "column_count",
+    "index_count",
+    "check_constraint_count",
+    "sql"
+  ],
+  "rows": [
+    [
+      "news",
+      22595,
+      "main",
+      22596,
+      "news_providers",
+      22731,
+      "Available news providers and whether each requires an API key.",
+      {
+        "domain": "media-and-news",
+        "topic": "news-providers",
+        "vgi.category": "discovery",
+        "vgi.doc_llm": "# news_providers (table)\n\nOne row per news provider this worker can route `news_search` to, with `provider` (the name to pass as `provider :=`) and `requires_key` (whether an API key must be supplied via a DuckDB secret). It contacts no external service, so it always runs offline. Query it before choosing a provider or to check whether you must create a secret first. `gdelt` is free (`requires_key = false`, the default); `newsapi` needs a key (`requires_key = true`).",
+        "vgi.doc_md": "# News Providers\n\nLists the providers this worker supports and whether each requires an API key. It is backend-free, so it is a safe way to verify the worker is attached. Scan it with no parentheses (it is a plain table). Runnable queries are attached as this table's example queries.",
+        "vgi.example_queries": "[{\"description\": \"List the available providers and their key requirements.\", \"sql\": \"SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider\"}, {\"description\": \"Count how many providers are available.\", \"sql\": \"SELECT count(*) AS provider_count FROM news.main.news_providers\"}, {\"description\": \"List only the free providers (no API key required).\", \"sql\": \"SELECT provider FROM news.main.news_providers WHERE requires_key = false\"}]",
+        "vgi.executable_examples": "[{\"description\": \"List the available news providers and whether each requires an API key.\", \"sql\": \"SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider\"}]",
+        "vgi.keywords": "[\"news providers\", \"providers\", \"discovery\", \"gdelt\", \"newsapi\", \"api key\"]",
+        "vgi.title": "Available Providers"
+      },
+      false,
+      false,
+      true,
+      0,
+      2,
+      1,
+      0,
+      "CREATE TABLE news_providers(provider VARCHAR, requires_key BOOLEAN NOT NULL, PRIMARY KEY(provider));"
+    ]
+  ]
+}
