@@ -52,7 +52,15 @@ _CATALOG_DESCRIPTION_MD = (
     "look-back window, optional country/language filters, and row-count paging.\n\n"
     "**Providers**: `gdelt` (default, free, no key, worldwide) and `newsapi` "
     "(requires a `TYPE newsapi` secret with an `api_key`). The provider list and each provider's "
-    "key requirement are queryable from SQL."
+    "key requirement are queryable from SQL.\n\n"
+    "## Sources and references\n\n"
+    "- [The GDELT Project](https://www.gdeltproject.org/) and its "
+    "[DOC 2.0 API](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/), which backs the "
+    "default `gdelt` provider.\n"
+    "- [NewsAPI](https://newsapi.org/): the "
+    "[`/v2/everything` endpoint](https://newsapi.org/docs/endpoints/everything) behind the "
+    "`newsapi` provider; [register for an API key](https://newsapi.org/register) and review its "
+    "[terms](https://newsapi.org/terms)."
 )
 
 _SCHEMA_DESCRIPTION_LLM = (
