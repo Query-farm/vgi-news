@@ -15,7 +15,7 @@ key — normalising every provider to one unified schema.
 
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
-ATTACH 'news' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-news@v0.4.1 vgi-news-worker');
+ATTACH 'news' (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-news@v0.4.2 vgi-news-worker');
 
 -- Latest GDELT articles mentioning "climate summit" from the past day
 SELECT title, url, domain, seendate, country
@@ -31,7 +31,7 @@ The worker isn't on PyPI; [uv](https://docs.astral.sh/uv/) runs it straight from
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'news' AS news (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-news@v0.4.1 vgi-news-worker');
+ATTACH 'news' AS news (TYPE vgi, LOCATION 'uvx --from git+https://github.com/Query-farm/vgi-news@v0.4.2 vgi-news-worker');
 
 -- List the available providers and their key requirements.
 SELECT provider, requires_key FROM news.main.news_providers ORDER BY provider;
@@ -42,14 +42,14 @@ SELECT title, url, domain, seendate FROM news.main.news_search('climate summit',
 
 GDELT, the default provider, needs no key; queries do need network access. NewsAPI needs a `newsapi` secret, created after the ATTACH: see [Authentication (NewsAPI)](#authentication-newsapi).
 
-Change `@v0.4.1` to move to a newer release.
+Change `@v0.4.2` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker and its dependencies):
 
   ```sql
-  ATTACH 'news' AS news (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-news:0.4.1');
+  ATTACH 'news' AS news (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-news:0.4.2');
   ```
 
 - **From a local checkout** (`git clone https://github.com/Query-farm/vgi-news`), point `LOCATION` at `uv run --project /path/to/vgi-news vgi-news-worker`.
