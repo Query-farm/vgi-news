@@ -39,7 +39,7 @@ def parse_published_at(value: str | None) -> datetime | None:
         # NewsAPI uses e.g. "2024-06-15T12:30:00Z"; fromisoformat handles the
         # offset form, so normalise a trailing 'Z' to '+00:00'.
         dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)

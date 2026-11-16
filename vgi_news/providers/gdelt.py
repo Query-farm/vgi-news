@@ -106,7 +106,7 @@ def parse_seendate(value: str | None) -> datetime | None:
         return None
     try:
         return datetime.strptime(value, _SEENDATE_FMT).replace(tzinfo=UTC)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
 
 
@@ -117,7 +117,7 @@ def _coerce_tone(article: dict[str, Any]) -> float | None:
         return None
     try:
         return float(raw)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
 
 

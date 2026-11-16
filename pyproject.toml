@@ -3,7 +3,7 @@ name = "vgi-news"
 version = "0.4.1"
 description = "A VGI worker bringing global news search (GDELT, NewsAPI) into DuckDB/SQL"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = { file = "LICENSE" }
 authors = [{ name = "Query Farm" }]
 keywords = ["vgi", "duckdb", "news", "gdelt", "newsapi", "search"]
@@ -60,7 +60,7 @@ markers = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "D"]
@@ -89,7 +89,7 @@ skip_checking_raises = true
 allow_init_docstring = true
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 strict = true
 warn_return_any = true
 warn_unused_ignores = true

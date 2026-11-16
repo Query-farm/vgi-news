@@ -81,7 +81,7 @@ make lint        # ruff + mypy (both must be clean)
 
 ## Gotchas
 
-- `requires-python >= 3.13`. `news_worker.py` has a PEP-723 header pinning
+- `requires-python >= 3.14`. `news_worker.py` has a PEP-723 header pinning
   `../vgi-python` for local `uv run`; CI installs `vgi-python` from PyPI instead.
 - Provider errors must surface as a clean DuckDB error (`ValueError` from
   `process`), never an uncaught crash. `http_get_json` does the bounded retry on
